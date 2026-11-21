@@ -1,0 +1,246 @@
+@import "tailwindcss";
+@import "@fontsource/caveat/600.css";
+@import "@fontsource/caveat/700.css";
+@import "@fontsource/patrick-hand/400.css";
+
+@theme {
+  --font-hand: "Patrick Hand", ui-rounded, system-ui, sans-serif;
+  --font-script: "Caveat", "Patrick Hand", cursive;
+
+  --color-paper: #fbf7ee;
+  --color-paper-dark: #f0e8d4;
+  --color-ink: #2d2a26;
+  --color-ink-soft: #6f685d;
+  --color-leaf: #4c7a35;
+  --color-leaf-dark: #36591f;
+  --color-leaf-light: #dfeccb;
+  --color-water: #2f6ea3;
+  --color-water-light: #d7e8f6;
+  --color-sun: #f4c34f;
+  --color-sun-light: #fcefc6;
+  --color-clay: #c4613a;
+  --color-clay-light: #f7dccd;
+  --color-rose: #c2415f;
+  --color-rose-light: #f8d6dd;
+}
+
+/* Wobbly, hand-cut borders. Two variants so neighbours do not look identical. */
+@utility sketch {
+  border: 2px solid var(--color-ink);
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+}
+
+@utility sketch-alt {
+  border: 2px solid var(--color-ink);
+  border-radius: 18px 225px 18px 255px / 255px 18px 225px 18px;
+}
+
+@utility shadow-sketch {
+  box-shadow: 3px 4px 0 0 var(--color-ink);
+}
+
+@utility shadow-sketch-sm {
+  box-shadow: 2px 2px 0 0 var(--color-ink);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-hand);
+    font-size: 18px;
+    color: var(--color-ink);
+    background: var(--color-paper);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-paper);
+    background-image: radial-gradient(circle at 1px 1px, rgb(45 42 38 / 0.1) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-script);
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  ::selection {
+    background: var(--color-sun-light);
+  }
+
+  :focus-visible {
+    outline: 2.5px dashed var(--color-water);
+    outline-offset: 3px;
+  }
+
+  button:not(:disabled), [role="button"], label[for] {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .card {
+    @apply sketch shadow-sketch;
+    background: rgb(255 255 255 / 0.82);
+    padding: 1rem;
+  }
+
+  .note {
+    @apply sketch-alt shadow-sketch;
+    background: var(--color-sun-light);
+    padding: 1rem 1.1rem;
+  }
+
+  .btn {
+    @apply sketch shadow-sketch-sm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.3rem 1rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    background: #fff;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px) rotate(-0.6deg);
+    box-shadow: 3px 4px 0 0 var(--color-ink);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 0 var(--color-ink);
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-leaf {
+    background: var(--color-leaf);
+    color: #fff;
+  }
+
+  .btn-leaf:hover:not(:disabled) {
+    background: var(--color-leaf-dark);
+  }
+
+  .btn-water {
+    background: var(--color-water-light);
+  }
+
+  .btn-sun {
+    background: var(--color-sun-light);
+  }
+
+  .btn-danger {
+    background: var(--color-rose-light);
+  }
+
+  .btn-sm {
+    padding: 0.1rem 0.65rem;
+    font-size: 0.95rem;
+  }
+
+  .btn-ghost {
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-ink);
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .input {
+    @apply sketch-alt;
+    width: 100%;
+    background: #fff;
+    padding: 0.4rem 0.8rem;
+    font-size: 1.05rem;
+  }
+
+  .input::placeholder {
+    color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+  }
+
+  .input:focus {
+    outline: none;
+    box-shadow: 2px 3px 0 0 var(--color-water);
+  }
+
+  .chip {
+    @apply sketch;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0 0.6rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: var(--color-paper);
+    border-width: 1.5px;
+  }
+
+  .field-label {
+    display: block;
+    font-family: var(--font-script);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 0.25rem;
+  }
+
+  /* A wavy pen line under headings. */
+  .squiggle {
+    padding-bottom: 0.3rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8' viewBox='0 0 40 8'%3E%3Cpath d='M0 4 Q5 0 10 4 T20 4 T30 4 T40 4' fill='none' stroke='%234c7a35' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: left bottom;
+    background-size: 26px 6px;
+  }
+
+  /* A strip of masking tape stuck on top of a card. */
+  .tape {
+    position: relative;
+  }
+
+  .tape::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 84px;
+    height: 24px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: rgb(244 195 79 / 0.55);
+    border-left: 2px dotted rgb(45 42 38 / 0.15);
+    border-right: 2px dotted rgb(45 42 38 / 0.15);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px) rotate(-1deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
