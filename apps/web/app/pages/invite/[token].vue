@@ -7,6 +7,7 @@ const route = useRoute()
 const token = String(route.params.token)
 const { preview, accept, select } = useHomes()
 const { push } = useToast()
+const { t } = useI18n()
 
 const invite = ref<InvitePreview | null>(null)
 const loading = ref(true)
@@ -16,7 +17,7 @@ const error = ref('')
 onMounted(async () => {
   try {
     invite.value = await preview(token)
-    if (!invite.value) error.value = 'This invite link has expired or was revoked. Ask for a new one.'
+    if (!invite.value) error.value = t('invite.expired')
   } catch (e) {
     error.value = errMsg(e)
   } finally {
@@ -28,7 +29,7 @@ async function join() {
   joining.value = true
   try {
     await accept(token)
-    push(`Welcome to ${invite.value?.home_name} 🌿`)
+    push(t('invite.welcome', { name: invite.value?.home_name ?? '' }))
     await navigateTo('/')
   } catch (e) {
     error.value = errMsg(e)
@@ -52,41 +53,41 @@ function open() {
     </div>
 
     <p v-if="loading" class="mt-4 text-ink-soft">
-      Opening the invite…
+      {{ $t('invite.opening') }}
     </p>
 
     <template v-else-if="invite && !error">
       <p class="mt-3 text-lg text-ink-soft">
-        {{ invite.invited_by || 'Someone' }} invited you to
+        {{ $t('invite.invitedYou', { name: invite.invited_by || $t('common.someone') }) }}
       </p>
       <h1 class="squiggle mx-auto mt-1 inline-block text-5xl">
         {{ invite.home_name }}
       </h1>
       <p class="mt-3 text-ink-soft">
-        You'll see the same plants, can water them, and get the morning reminders.
+        {{ $t('invite.text') }}
       </p>
       <button v-if="!invite.already_member" type="button" class="btn btn-leaf mt-6 w-full text-xl!" :disabled="joining" @click="join">
-        {{ joining ? 'Joining…' : 'Join this home' }}
+        {{ joining ? $t('invite.joining') : $t('invite.join') }}
       </button>
       <template v-else>
         <p class="mt-6">
-          You're already in this home.
+          {{ $t('invite.alreadyIn') }}
         </p>
         <button type="button" class="btn btn-leaf mt-3 w-full" @click="open">
-          Open it
+          {{ $t('invite.openIt') }}
         </button>
       </template>
     </template>
 
     <template v-else>
       <h1 class="mt-3 text-4xl">
-        Hmm…
+        {{ $t('invite.hmm') }}
       </h1>
       <p class="sketch mt-4 bg-rose-light px-3 py-2 text-left" role="alert">
         {{ error }}
       </p>
       <NuxtLink to="/" class="btn mt-4">
-        Go to Gardener
+        {{ $t('invite.goTo') }}
       </NuxtLink>
     </template>
   </div>

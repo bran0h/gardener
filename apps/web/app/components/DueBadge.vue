@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{ days: number | null }>()
+const { dueLabel } = useFormat()
 
 const state = computed(() => dueState(props.days))
 const tone = computed(() => ({
@@ -12,8 +13,8 @@ const tone = computed(() => ({
 </script>
 
 <template>
-  <span class="chip" :class="tone">
+  <span class="chip h-8 min-w-0 whitespace-nowrap" :class="tone">
     <CareIcon kind="water" class="size-4!" />
-    <span>{{ dueLabel(days) }}</span>
+    <span class="truncate">{{ dueLabel(days) }}</span>
   </span>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CARE_KINDS, CARE_LABELS, KIND_LABELS, LIGHT_LABELS, type CareKind, type CareLog } from '~/types/plant'
+import { CARE_KINDS, type CareKind, type CareLog } from '~/types/plant'
 
 const route = useRoute()
 const id = String(route.params.id)
@@ -7,6 +7,8 @@ const { plants, fetchPlant, listLogs, logCare, deleteLog, deletePlant, photoUrl 
 const { push } = useToast()
 const { ensure: ensureHomes, select: selectHome, people: homePeople } = useHomes()
 const user = useSupabaseUser()
+const { t } = useI18n()
+const { date, relativeDay, formatDay } = useFormat()
 
 const plant = computed(() => plants.value.find(p => p.id === id) ?? null)
 
@@ -15,8 +17,8 @@ const names = ref<Record<string, string>>({})
 const shared = computed(() => Object.keys(names.value).length > 1)
 function who(userId: string) {
   if (!shared.value) return ''
-  if (userId === user.value?.sub) return 'you'
-  return names.value[userId] ?? 'someone who left'
+  if (userId === user.value?.sub) return t('common.you')
+  return names.value[userId] ?? t('plant.someoneWhoLeft')
 }
 const logs = ref<CareLog[]>([])
 const loading = ref(true)
@@ -26,7 +28,7 @@ onMounted(async () => {
   try {
     const p = await fetchPlant(id)
     if (!p) {
-      error.value = 'This plant does not exist (any more).'
+      error.value = t('plant.notFound')
       return
     }
     selectHome(p.home_id)
@@ -37,7 +39,7 @@ onMounted(async () => {
     logs.value = entries
     names.value = Object.fromEntries(people.map(x => [
       x.user_id,
-      (x.full_name || x.email?.split('@')[0] || 'someone').split(' ')[0]!
+      (x.full_name || x.email?.split('@')[0] || t('common.someone')).split(' ')[0]!
     ]))
   } catch (e) {
     error.value = errMsg(e)
@@ -57,7 +59,7 @@ async function record(kind: CareKind, note?: string | null, doneAt?: string) {
   try {
     await logCare([id], kind, { note, doneAt })
     logs.value = await listLogs(id)
-    push(kind === 'note' ? 'Note saved' : `${CARE_LABELS[kind].past} ${plant.value?.name ?? ''}`, kind === 'water' ? 'water' : 'leaf')
+    push(kind === 'note' ? t('plant.noteSaved') : t('plant.careDone', { action: t(`care.${kind}.past`), name: plant.value?.name ?? '' }), kind === 'water' ? 'water' : 'leaf')
     return true
   } catch (e) {
     push(errMsg(e), 'rose')
@@ -96,7 +98,7 @@ async function destroy() {
   const name = plant.value.name
   try {
     await deletePlant(plant.value)
-    push(`Said goodbye to ${name}`)
+    push(t('plant.goodbye', { name }))
     await navigateTo('/')
   } catch (e) {
     push(errMsg(e), 'rose')
@@ -107,14 +109,14 @@ async function destroy() {
 <template>
   <div class="flex flex-col gap-6">
     <NuxtLink to="/" class="text-ink-soft hover:underline">
-      ← All plants
+      {{ $t('plant.allPlants') }}
     </NuxtLink>
 
     <p v-if="error" class="sketch bg-rose-light px-4 py-3" role="alert">
       {{ error }}
     </p>
     <p v-else-if="loading && !plant" class="text-ink-soft">
-      Loading…
+      {{ $t('common.loading') }}
     </p>
 
     <template v-else-if="plant">
@@ -126,26 +128,26 @@ async function destroy() {
           </div>
           <dl class="card grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rotate-[0.4deg]">
             <dt class="text-ink-soft">
-              Kind
+              {{ $t('plant.kind') }}
             </dt>
-            <dd>{{ KIND_LABELS[plant.kind] }}</dd>
+            <dd>{{ $t(`kinds.${plant.kind}`) }}</dd>
             <template v-if="plant.location">
               <dt class="text-ink-soft">
-                Lives in
+                {{ $t('plant.livesIn') }}
               </dt>
               <dd>{{ plant.location }}</dd>
             </template>
             <template v-if="plant.light">
               <dt class="text-ink-soft">
-                Light
+                {{ $t('plant.light') }}
               </dt>
-              <dd>{{ LIGHT_LABELS[plant.light] }}</dd>
+              <dd>{{ $t(`lights.${plant.light}`) }}</dd>
             </template>
             <template v-if="plant.acquired_on">
               <dt class="text-ink-soft">
-                With us since
+                {{ $t('plant.withUsSince') }}
               </dt>
-              <dd>{{ new Date(plant.acquired_on).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) }}</dd>
+              <dd>{{ date(plant.acquired_on, { day: 'numeric', month: 'long', year: 'numeric' }) }}</dd>
             </template>
           </dl>
         </div>
@@ -164,18 +166,18 @@ async function destroy() {
           <div class="max-w-sm">
             <div class="note">
               <p class="flex items-center gap-2 font-script text-3xl font-bold">
-                <CareIcon kind="water" class="size-7!" /> Water
+                <CareIcon kind="water" class="size-7!" /> {{ $t('plant.water') }}
               </p>
               <p v-if="plant.water_every_days" class="mt-1">
-                every {{ plant.water_every_days }} days
+                {{ $t('plant.everyDays', { n: plant.water_every_days }, plant.water_every_days) }}
               </p>
               <p class="text-sm text-ink-soft">
-                last: {{ relativeDay(plant.last_watered_at) }}
+                {{ $t('plant.last', { when: relativeDay(plant.last_watered_at) }) }}
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <DueBadge :days="waterDays" />
                 <button type="button" class="btn btn-water btn-sm" :disabled="busy" @click="record('water')">
-                  Watered now
+                  {{ $t('plant.wateredNow') }}
                 </button>
               </div>
             </div>
@@ -187,17 +189,17 @@ async function destroy() {
 
           <div class="flex flex-wrap gap-2">
             <NuxtLink :to="`/plants/${plant.id}/edit`" class="btn">
-              Edit
+              {{ $t('common.edit') }}
             </NuxtLink>
             <button v-if="!confirmDelete" type="button" class="btn btn-ghost" @click="confirmDelete = true">
-              Delete
+              {{ $t('common.delete') }}
             </button>
             <template v-else>
               <button type="button" class="btn btn-danger" @click="destroy">
-                Yes, delete {{ plant.name }}
+                {{ $t('plant.confirmDelete', { name: plant.name }) }}
               </button>
               <button type="button" class="btn btn-ghost" @click="confirmDelete = false">
-                Keep it
+                {{ $t('plant.keepIt') }}
               </button>
             </template>
           </div>
@@ -206,10 +208,10 @@ async function destroy() {
           <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
               <h2 class="squiggle text-4xl">
-                Diary
+                {{ $t('plant.diary') }}
               </h2>
               <button type="button" class="btn btn-sun btn-sm" @click="showLog = !showLog">
-                {{ showLog ? 'Close' : '+ Add entry' }}
+                {{ showLog ? $t('common.close') : $t('plant.addEntry') }}
               </button>
             </div>
 
@@ -224,7 +226,7 @@ async function destroy() {
                   :aria-pressed="logForm.kind === k"
                   @click="logForm.kind = k"
                 >
-                  <CareIcon :kind="k" class="size-4!" /> {{ CARE_LABELS[k].verb }}
+                  <CareIcon :kind="k" class="size-4!" /> {{ $t(`care.${k}.verb`) }}
                 </button>
               </div>
               <textarea
@@ -232,13 +234,13 @@ async function destroy() {
                 rows="2"
                 class="input"
                 maxlength="1000"
-                :placeholder="logForm.kind === 'note' ? 'New leaf unfurling!' : 'Anything to add? (optional)'"
+                :placeholder="logForm.kind === 'note' ? $t('plant.notePlaceholder') : $t('plant.optionalPlaceholder')"
               />
               <div class="flex flex-wrap items-center gap-3">
                 <DatePicker
                   v-model="logForm.date"
                   :max="todayInput()"
-                  aria-label="Date"
+                  :aria-label="$t('plant.dateAria')"
                   class="min-w-64 flex-1"
                 />
                 <button
@@ -246,13 +248,13 @@ async function destroy() {
                   class="btn btn-leaf"
                   :disabled="busy || (logForm.kind === 'note' && !logForm.note.trim())"
                 >
-                  Save
+                  {{ $t('common.save') }}
                 </button>
               </div>
             </form>
 
             <p v-if="!logs.length" class="text-ink-soft">
-              Nothing written down yet.
+              {{ $t('plant.nothingYet') }}
             </p>
             <ol v-else class="relative ml-3 flex flex-col gap-3 border-l-2 border-dashed border-ink/30 pl-5">
               <li v-for="log in logs" :key="log.id" class="group relative">
@@ -262,9 +264,9 @@ async function destroy() {
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <p>
-                      <span class="font-bold">{{ CARE_LABELS[log.kind].past }}</span>
+                      <span class="font-bold">{{ $t(`care.${log.kind}.past`) }}</span>
                       <span class="text-ink-soft"> · {{ formatDay(log.done_at) }}</span>
-                      <span v-if="who(log.user_id)" class="text-ink-soft"> · by {{ who(log.user_id) }}</span>
+                      <span v-if="who(log.user_id)" class="text-ink-soft"> · {{ $t('plant.by', { name: who(log.user_id) }) }}</span>
                     </p>
                     <p v-if="log.note" class="whitespace-pre-line">
                       {{ log.note }}
@@ -273,8 +275,8 @@ async function destroy() {
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm opacity-60 group-hover:opacity-100"
-                    :aria-label="`Remove this ${CARE_LABELS[log.kind].past.toLowerCase()} entry`"
-                    title="Remove entry"
+                    :aria-label="$t('plant.removeEntry')"
+                    :title="$t('plant.removeEntry')"
                     @click="removeLog(log)"
                   >
                     ✕

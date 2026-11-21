@@ -6,6 +6,8 @@ const { ensure: ensureHomes, current: home, homes } = useHomes()
 const loaded = computed(() => plantsLoaded.value && !!home.value)
 const { push } = useToast()
 const user = useSupabaseUser()
+const { t } = useI18n()
+const { date, dueLabel } = useFormat()
 
 const error = ref('')
 onMounted(async () => {
@@ -23,25 +25,26 @@ const firstName = computed(() => {
 
 const greeting = computed(() => {
   const h = new Date().getHours()
-  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+  const part = h < 5 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+  const g = t(`dashboard.greeting.${part}`)
+  return firstName.value ? t('dashboard.greetingName', { greeting: g, name: firstName.value }) : t('dashboard.greetingOnly', { greeting: g })
 })
 
-const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+const today = computed(() => date(new Date(), { weekday: 'long', day: 'numeric', month: 'long' }))
 
 interface Due { plant: Plant, days: number }
 
-function dueList(): Due[] {
-  return plants.value
+const thirsty = computed(() =>
+  plants.value
     .map(plant => ({ plant, days: daysUntilDue(plant.last_watered_at, plant.water_every_days) }))
     .filter((x): x is Due => x.days !== null && x.days <= 0)
     .sort((a, b) => a.days - b.days)
-}
-
-const thirsty = computed(() => dueList())
+)
 
 const search = ref('')
 const room = ref<string | null>(null)
-const NO_ROOM = 'Somewhere in the flat'
+/** Group key for plants without a room; shown as "Somewhere in the flat". */
+const NO_ROOM = ''
 
 const rooms = computed(() =>
   [...new Set(plants.value.map(p => p.location).filter((x): x is string => !!x))].sort()
@@ -70,8 +73,8 @@ async function care(list: Plant[], kind: CareKind) {
   ids.forEach(id => busy.value.add(id))
   try {
     await logCare(ids, kind)
-    const what = list.length === 1 ? list[0]!.name : `${list.length} plants`
-    push(kind === 'water' ? `Watered ${what} 💧` : `${what}: done`, kind === 'water' ? 'water' : 'leaf')
+    const what = list.length === 1 ? list[0]!.name : t('dashboard.nPlants', { n: list.length }, list.length)
+    push(t('dashboard.watered', { what }), 'water')
   } catch (e) {
     push(errMsg(e), 'rose')
   } finally {
@@ -89,17 +92,17 @@ async function care(list: Plant[], kind: CareKind) {
         </template>
       </p>
       <h1 class="text-5xl sm:text-6xl">
-        {{ greeting }}<span v-if="firstName">, {{ firstName }}</span>!
+        {{ greeting }}
       </h1>
     </section>
 
     <p v-if="error" class="sketch bg-rose-light px-4 py-3" role="alert">
-      Could not load your plants: {{ error }}
+      {{ $t('dashboard.loadError', { error }) }}
     </p>
 
     <div v-if="!loaded && !error" class="flex flex-col items-center gap-2 py-16 text-ink-soft">
       <PlantDoodle kind="succulent" class="size-20 animate-pulse" />
-      <p>Counting leaves…</p>
+      <p>{{ $t('dashboard.counting') }}</p>
     </div>
 
     <!-- empty -->
@@ -109,14 +112,13 @@ async function care(list: Plant[], kind: CareKind) {
         <PlantDoodle kind="tree" class="size-24 rotate-2" />
       </div>
       <h2 class="text-4xl">
-        No plants yet
+        {{ $t('dashboard.emptyTitle') }}
       </h2>
       <p class="text-ink-soft">
-        Add the first green friend to <b>{{ home?.name }}</b> and Gardener will remind you when it gets thirsty.
-        Living with someone? Invite them from the home menu at the top.
+        {{ $t('dashboard.emptyText', { home: home?.name }) }}
       </p>
       <NuxtLink to="/plants/new" class="btn btn-leaf text-xl!">
-        + Add a plant
+        {{ $t('dashboard.addPlant') }}
       </NuxtLink>
     </section>
 
@@ -126,36 +128,36 @@ async function care(list: Plant[], kind: CareKind) {
         <div class="note -rotate-[0.4deg]">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 class="flex items-center gap-2 text-4xl">
-              <CareIcon kind="water" class="size-8!" /> Thirsty today
+              <CareIcon kind="water" class="size-8!" /> {{ $t('dashboard.thirstyToday') }}
             </h2>
             <button
               v-if="thirsty.length > 1"
               type="button"
               class="btn btn-water btn-sm"
-              @click="care(thirsty.map(t => t.plant), 'water')"
+              @click="care(thirsty.map(x => x.plant), 'water')"
             >
-              Watered all {{ thirsty.length }}
+              {{ $t('dashboard.wateredAll', { n: thirsty.length }) }}
             </button>
           </div>
-          <p v-if="!thirsty.length" class="text-lg">
-            Everyone has had a drink. Nothing to do! ☀️
+          <p v-if="!thirsty.length" class="text-lg text-balance">
+            {{ $t('dashboard.nothingToDo') }}&nbsp;☀️
           </p>
           <ul v-else class="flex flex-col divide-y-2 divide-dashed divide-ink/20">
-            <li v-for="t in thirsty" :key="t.plant.id" class="flex items-center gap-3 py-2">
-              <PlantPicture :src="photoUrl(t.plant)" :kind="t.plant.kind" :alt="t.plant.name" class="size-12 shrink-0" />
-              <NuxtLink :to="`/plants/${t.plant.id}`" class="min-w-0 flex-1">
-                <span class="block truncate font-script text-2xl font-bold">{{ t.plant.name }}</span>
+            <li v-for="x in thirsty" :key="x.plant.id" class="flex items-center gap-3 py-2">
+              <PlantPicture :src="photoUrl(x.plant)" :kind="x.plant.kind" :alt="x.plant.name" class="size-12 shrink-0" />
+              <NuxtLink :to="`/plants/${x.plant.id}`" class="min-w-0 flex-1">
+                <span class="block truncate font-script text-2xl font-bold">{{ x.plant.name }}</span>
                 <span class="block truncate text-sm text-ink-soft">
-                  {{ t.plant.location ?? NO_ROOM }} · {{ dueLabel(t.days) }}
+                  {{ x.plant.location ?? $t('dashboard.somewhere') }} · {{ dueLabel(x.days) }}
                 </span>
               </NuxtLink>
               <button
                 type="button"
                 class="btn btn-water btn-sm"
-                :disabled="busy.has(t.plant.id)"
-                @click="care([t.plant], 'water')"
+                :disabled="busy.has(x.plant.id)"
+                @click="care([x.plant], 'water')"
               >
-                <CareIcon kind="water" /> Done
+                <CareIcon kind="water" /> {{ $t('dashboard.done') }}
               </button>
             </li>
           </ul>
@@ -166,14 +168,14 @@ async function care(list: Plant[], kind: CareKind) {
       <section class="flex flex-col gap-5">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <h2 class="squiggle self-start text-4xl">
-            All plants <span class="text-2xl text-ink-soft">({{ plants.length }})</span>
+            {{ $t('dashboard.allPlants') }} <span class="text-2xl text-ink-soft">({{ plants.length }})</span>
           </h2>
           <input
             v-model="search"
             type="search"
             class="input sm:w-64!"
-            placeholder="Find a plant…"
-            aria-label="Search plants"
+            :placeholder="$t('dashboard.search')"
+            :aria-label="$t('dashboard.searchAria')"
           >
         </div>
         <div v-if="rooms.length > 1" class="flex flex-wrap gap-2">
@@ -183,7 +185,7 @@ async function care(list: Plant[], kind: CareKind) {
             :class="!room ? 'bg-leaf-light!' : 'bg-white!'"
             @click="room = null"
           >
-            Everywhere
+            {{ $t('dashboard.everywhere') }}
           </button>
           <button
             v-for="r in rooms"
@@ -198,14 +200,15 @@ async function care(list: Plant[], kind: CareKind) {
         </div>
 
         <p v-if="!groups.length" class="text-ink-soft">
-          No plant matches that.
+          {{ $t('dashboard.noMatch') }}
         </p>
 
         <div v-for="[name, list] in groups" :key="name" class="flex flex-col gap-4">
           <h3 v-if="groups.length > 1 || name !== NO_ROOM" class="text-3xl text-leaf-dark">
-            {{ name }}
+            {{ name || $t('dashboard.somewhere') }}
           </h3>
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+          <!-- Phones: one plant per row. Larger screens: a grid of cards. -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
             <PlantCard
               v-for="p in list"
               :key="p.id"

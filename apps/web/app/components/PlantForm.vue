@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import {
-  KIND_LABELS, LIGHT_LABELS, LIGHTS, PLANT_KINDS,
+  LIGHTS, PLANT_KINDS,
   type Light, type Plant, type PlantInput, type PlantKind
 } from '~/types/plant'
 
 const props = defineProps<{ plant?: Plant | null }>()
 const emit = defineEmits<{ saved: [plant: Plant] }>()
+const { t } = useI18n()
 
 const { homePlants: plants, ensureLoaded, savePlant, uploadPhoto, removePhoto, logCare, photoUrl } = usePlants()
 const { ensure: ensureHomes, current: home } = useHomes()
@@ -76,7 +77,7 @@ const error = ref('')
 
 async function submit() {
   if (!form.name.trim()) {
-    error.value = 'Every plant deserves a name.'
+    error.value = t('form.needsName')
     return
   }
   saving.value = true
@@ -92,7 +93,7 @@ async function submit() {
     }
 
     const homeId = p?.home_id ?? home.value?.id
-    if (!homeId) throw new Error('No home to put the plant in yet. Reload and try again.')
+    if (!homeId) throw new Error(t('form.noHome'))
 
     const input: PlantInput = {
       home_id: homeId,
@@ -133,23 +134,23 @@ async function submit() {
         <PlantPicture
           :src="photoPreview"
           :kind="form.kind"
-          :alt="form.name || 'New plant'"
+          :alt="form.name || $t('form.newPlant')"
           class="aspect-square w-full max-w-72"
         />
         <div class="flex flex-wrap justify-center gap-2">
           <label class="btn btn-sun btn-sm">
             <input type="file" accept="image/*" class="sr-only" @change="onPhoto">
-            {{ photoPreview ? 'Change photo' : 'Add a photo' }}
+            {{ photoPreview ? $t('form.changePhoto') : $t('form.addPhoto') }}
           </label>
           <button v-if="photoPreview" type="button" class="btn btn-ghost btn-sm" @click="clearPhoto">
-            Remove
+            {{ $t('common.remove') }}
           </button>
         </div>
       </div>
 
       <fieldset>
         <legend class="field-label">
-          What kind?
+          {{ $t('form.whatKind') }}
         </legend>
         <div class="grid grid-cols-4 gap-2">
           <button
@@ -162,7 +163,7 @@ async function submit() {
             @click="form.kind = k"
           >
             <PlantDoodle :kind="k" class="size-12" />
-            {{ KIND_LABELS[k] }}
+            {{ $t(`kinds.${k}`) }}
           </button>
         </div>
       </fieldset>
@@ -171,12 +172,12 @@ async function submit() {
     <!-- right: details -->
     <div class="flex flex-col gap-5">
       <div>
-        <label for="name" class="field-label">Name</label>
+        <label for="name" class="field-label">{{ $t('form.name') }}</label>
         <input
           id="name"
           v-model="form.name"
           class="input text-xl!"
-          placeholder="e.g. Monty the Monstera"
+          :placeholder="$t('form.namePlaceholder')"
           maxlength="80"
           required
           autocomplete="off"
@@ -185,23 +186,23 @@ async function submit() {
 
       <div class="grid gap-5 sm:grid-cols-2">
         <div>
-          <label for="species" class="field-label">Species</label>
+          <label for="species" class="field-label">{{ $t('form.species') }}</label>
           <input
             id="species"
             v-model="form.species"
             class="input"
-            placeholder="Monstera deliciosa"
+            :placeholder="$t('form.speciesPlaceholder')"
             maxlength="120"
           >
         </div>
         <div>
-          <label for="location" class="field-label">Where is it?</label>
+          <label for="location" class="field-label">{{ $t('form.where') }}</label>
           <input
             id="location"
             v-model="form.location"
             class="input"
             list="rooms"
-            placeholder="Living room window"
+            :placeholder="$t('form.wherePlaceholder')"
             maxlength="60"
           >
           <datalist id="rooms">
@@ -212,7 +213,7 @@ async function submit() {
 
       <fieldset>
         <legend class="field-label">
-          Light
+          {{ $t('form.light') }}
         </legend>
         <div class="flex flex-wrap gap-2">
           <button
@@ -224,14 +225,14 @@ async function submit() {
             :aria-pressed="form.light === l"
             @click="form.light = form.light === l ? null : l"
           >
-            {{ LIGHT_LABELS[l] }}
+            {{ $t(`lights.${l}`) }}
           </button>
         </div>
       </fieldset>
 
       <div class="note -rotate-[0.6deg]">
         <label for="water" class="field-label flex items-center gap-2">
-          <CareIcon kind="water" class="size-6!" /> Water every
+          <CareIcon kind="water" class="size-6!" /> {{ $t('form.waterEvery') }}
         </label>
         <div class="flex flex-wrap items-center gap-2">
           <input
@@ -243,8 +244,8 @@ async function submit() {
             class="input w-24!"
             placeholder="–"
           >
-          <span>days</span>
-          <span class="mx-1 text-ink-soft">or</span>
+          <span>{{ $t('form.days') }}</span>
+          <span class="mx-1 text-ink-soft">{{ $t('form.or') }}</span>
           <button
             v-for="d in WATER_PRESETS"
             :key="d"
@@ -257,11 +258,11 @@ async function submit() {
           </button>
         </div>
         <p class="mt-1 text-sm text-ink-soft">
-          Leave empty if it doesn't need a schedule.
+          {{ $t('form.noSchedule') }}
         </p>
 
         <div v-if="isNew && form.water_every_days" class="mt-3">
-          <label for="last-watered" class="text-lg">Last watered on</label>
+          <label for="last-watered" class="text-lg">{{ $t('form.lastWateredOn') }}</label>
           <DatePicker
             id="last-watered"
             v-model="lastWatered"
@@ -273,27 +274,27 @@ async function submit() {
 
       <div class="grid gap-5 sm:grid-cols-2">
         <div>
-          <label for="acquired" class="field-label">Got it on</label>
+          <label for="acquired" class="field-label">{{ $t('form.gotItOn') }}</label>
           <DatePicker
             id="acquired"
             v-model="form.acquired_on"
             :max="todayInput()"
             :quick="false"
             clearable
-            placeholder="Not sure"
+            :placeholder="$t('form.notSure')"
           />
         </div>
       </div>
 
       <div>
-        <label for="notes" class="field-label">Notes</label>
+        <label for="notes" class="field-label">{{ $t('form.notes') }}</label>
         <textarea
           id="notes"
           v-model="form.notes"
           rows="4"
           class="input"
           maxlength="4000"
-          placeholder="Likes a shower now and then. Hates drafts."
+          :placeholder="$t('form.notesPlaceholder')"
         />
       </div>
 
@@ -303,10 +304,10 @@ async function submit() {
 
       <div class="flex flex-wrap items-center gap-3">
         <button type="submit" class="btn btn-leaf text-xl!" :disabled="saving">
-          {{ saving ? 'Saving…' : isNew ? 'Plant it!' : 'Save changes' }}
+          {{ saving ? $t('form.saving') : isNew ? $t('form.plantIt') : $t('form.saveChanges') }}
         </button>
         <NuxtLink :to="p ? `/plants/${p.id}` : '/'" class="btn btn-ghost">
-          Cancel
+          {{ $t('common.cancel') }}
         </NuxtLink>
       </div>
     </div>

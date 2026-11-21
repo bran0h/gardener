@@ -12,7 +12,7 @@ watch(user, (u) => {
   <div class="flex flex-col items-center gap-2 text-ink-soft">
     <PlantDoodle kind="herb" class="size-20 animate-pulse" />
     <p class="text-xl">
-      Signing you in…
+      {{ $t('login.signingIn') }}
     </p>
   </div>
 </template>

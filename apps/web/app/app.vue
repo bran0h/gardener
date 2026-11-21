@@ -1,3 +1,13 @@
+<script setup lang="ts">
+// Keep <html lang> in step with the chosen language (screen readers, Safari translate).
+const { locale, locales } = useI18n()
+useHead({
+  htmlAttrs: {
+    lang: () => (locales.value as { code: string, language?: string }[]).find(l => l.code === locale.value)?.language ?? 'en'
+  }
+})
+</script>
+
 <template>
   <NuxtLayout>
     <NuxtPage />

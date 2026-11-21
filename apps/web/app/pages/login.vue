@@ -5,10 +5,11 @@ const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const route = useRoute()
 const loading = ref(false)
+const { t } = useI18n()
 const error = ref(
   route.query.denied
-    ? 'This account has no access to Gardener. Ask for the "gardener" role at auth.hozza.dev.'
-    : route.query.error ? `Could not verify access: ${String(route.query.error)}` : ''
+    ? t('login.denied')
+    : route.query.error ? t('login.verifyFailed', { reason: String(route.query.error) }) : ''
 )
 
 const redirect = useSupabaseCookieRedirect()
@@ -38,10 +39,10 @@ async function loginWithGoogle() {
       <PlantDoodle kind="flower" class="size-16 rotate-6" />
     </div>
     <h1 class="squiggle mx-auto mt-2 inline-block text-6xl">
-      Gardener
+      {{ $t('app.name') }}
     </h1>
     <p class="mt-3 text-lg text-ink-soft">
-      Keep the green friends in the flat happy and watered.
+      {{ $t('app.tagline') }}
     </p>
 
     <button
@@ -56,7 +57,7 @@ async function loginWithGoogle() {
         <path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1Z" />
         <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.8 3.6-4.9 6.7-4.9Z" />
       </svg>
-      {{ loading ? 'Off to Google…' : 'Sign in with Google' }}
+      {{ loading ? $t('login.redirecting') : $t('login.google') }}
     </button>
 
     <p v-if="error" class="sketch mt-4 bg-rose-light px-3 py-2 text-left" role="alert">

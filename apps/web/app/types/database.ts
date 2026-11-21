@@ -50,8 +50,8 @@ export type Database = {
       gardener_push_subscriptions: {
         Row: PushSubscriptionRow
         Insert: Pick<PushSubscriptionRow, 'endpoint' | 'p256dh' | 'auth'>
-          & Partial<Pick<PushSubscriptionRow, 'remind_hour' | 'timezone' | 'user_agent'>>
-        Update: Partial<Pick<PushSubscriptionRow, 'p256dh' | 'auth' | 'remind_hour' | 'timezone' | 'user_agent'>>
+          & Partial<Pick<PushSubscriptionRow, 'remind_hour' | 'timezone' | 'locale' | 'user_agent'>>
+        Update: Partial<Pick<PushSubscriptionRow, 'p256dh' | 'auth' | 'remind_hour' | 'timezone' | 'locale' | 'user_agent'>>
         Relationships: []
       }
     }

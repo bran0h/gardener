@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { state, hour, refresh, enable, disable, setHour, test } = usePush()
 const { push } = useToast()
+const { t } = useI18n()
+const { time } = useFormat()
 
 const open = ref(false)
 const busy = ref(false)
@@ -33,8 +35,7 @@ async function run(fn: () => Promise<unknown>, done?: string) {
 }
 
 const hours = Array.from({ length: 24 }, (_, h) => h)
-const hourLabel = (h: number) =>
-  new Date(2024, 0, 1, h).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+const hourLabel = (h: number) => time(new Date(2024, 0, 1, h), { hour: 'numeric', minute: '2-digit' })
 </script>
 
 <template>
@@ -43,8 +44,8 @@ const hourLabel = (h: number) =>
       type="button"
       class="btn btn-ghost btn-sm relative px-2!"
       :aria-expanded="open"
-      aria-label="Reminders"
-      title="Reminders"
+      :aria-label="$t('reminders.title')"
+      :title="$t('reminders.title')"
       @click="open = !open"
     >
       <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -59,73 +60,68 @@ const hourLabel = (h: number) =>
         v-if="open"
         class="card tape fixed inset-x-3 top-20 z-50 flex flex-col gap-3 p-4! sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-3 sm:w-80"
         role="dialog"
-        aria-label="Reminders"
+        :aria-label="$t('reminders.title')"
       >
         <h2 class="text-3xl">
-          Reminders
+          {{ $t('reminders.title') }}
         </h2>
 
         <p v-if="state === 'loading'" class="text-ink-soft">
-          Checking…
+          {{ $t('reminders.checking') }}
         </p>
 
         <template v-else-if="state === 'needs-install'">
-          <p>On iPhone, reminders only work from the Home Screen app:</p>
+          <p>{{ $t('reminders.installIntro') }}</p>
           <ol class="ml-5 list-decimal space-y-1">
-            <li>Tap <b>Share</b> <span aria-hidden="true">⬆︎</span> in Safari.</li>
-            <li>Choose <b>Add to Home Screen</b>.</li>
-            <li>Open Gardener from the Home Screen and come back here.</li>
+            <li>{{ $t('reminders.installStep1') }}</li>
+            <li>{{ $t('reminders.installStep2') }}</li>
+            <li>{{ $t('reminders.installStep3') }}</li>
           </ol>
         </template>
 
         <p v-else-if="state === 'unsupported'" class="text-ink-soft">
-          This browser can't show notifications.
+          {{ $t('reminders.unsupported') }}
           <template v-if="ios">
-            It needs iOS 16.4 or newer.
+            {{ $t('reminders.needsIos') }}
           </template>
         </p>
 
         <p v-else-if="state === 'denied'">
-          Notifications are blocked for Gardener.
-          <template v-if="ios">
-            Allow them in <b>Settings → Notifications → Gardener</b>, then reopen the app.
-          </template>
-          <template v-else>
-            Allow them in the site settings of your browser, then reload.
-          </template>
+          {{ $t('reminders.denied') }}
+          {{ ios ? $t('reminders.deniedIos') : $t('reminders.deniedBrowser') }}
         </p>
 
         <template v-else-if="state === 'off'">
-          <p>Get a note every morning when someone is thirsty.</p>
-          <button type="button" class="btn btn-leaf" :disabled="busy" @click="run(enable, 'Reminders are on 🌱')">
-            Turn on for this device
+          <p>{{ $t('reminders.intro') }}</p>
+          <button type="button" class="btn btn-leaf" :disabled="busy" @click="run(enable, t('reminders.turnedOn'))">
+            {{ $t('reminders.turnOn') }}
           </button>
         </template>
 
         <template v-else>
           <p class="flex items-center gap-2">
-            <span class="size-2.5 rounded-full border border-ink bg-leaf" /> On for this device
+            <span class="size-2.5 rounded-full border border-ink bg-leaf" /> {{ $t('reminders.on') }}
           </p>
           <label class="flex flex-wrap items-center gap-2">
-            Every morning after
+            {{ $t('reminders.everyMorningAfter') }}
             <select
               class="input w-auto! py-1!"
               :value="hour"
               :disabled="busy"
-              @change="run(() => setHour(Number(($event.target as HTMLSelectElement).value)), 'Saved')"
+              @change="run(() => setHour(Number(($event.target as HTMLSelectElement).value)), t('reminders.saved'))"
             >
               <option v-for="h in hours" :key="h" :value="h">{{ hourLabel(h) }}</option>
             </select>
           </label>
           <p class="text-sm text-ink-soft">
-            Only when someone needs water. Nothing to do, no note.
+            {{ $t('reminders.onlyWhen') }}
           </p>
           <div class="flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sun btn-sm" :disabled="busy" @click="run(test, 'Sent! It should pop up in a moment.')">
-              Send a test
+            <button type="button" class="btn btn-sun btn-sm" :disabled="busy" @click="run(test, t('reminders.sent'))">
+              {{ $t('reminders.sendTest') }}
             </button>
-            <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="run(disable, 'Reminders are off')">
-              Turn off
+            <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="run(disable, t('reminders.turnedOff'))">
+              {{ $t('reminders.turnOff') }}
             </button>
           </div>
         </template>

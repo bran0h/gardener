@@ -38,6 +38,8 @@ export function usePush() {
   const apiUrl = useRuntimeConfig().public.apiUrl.replace(/\/$/, '')
   const state = useState<PushState>('push-state', () => 'loading')
   const hour = useState<number>('push-hour', () => 8)
+  const i18n = useNuxtApp().$i18n
+  const locale = () => (i18n.locale.value === 'sk' ? 'sk' : 'en') as 'en' | 'sk'
 
   async function registration() {
     return (await navigator.serviceWorker.getRegistration('/'))
@@ -53,6 +55,7 @@ export function usePush() {
         p256dh: json.keys?.p256dh ?? '',
         auth: json.keys?.auth ?? '',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        locale: locale(),
         user_agent: navigator.userAgent.slice(0, 300)
       }, { onConflict: 'endpoint' })
       .select('remind_hour')
@@ -117,11 +120,20 @@ export function usePush() {
     hour.value = h
   }
 
+  /** The language reminders arrive in on this device. */
+  async function syncLocale(code: 'en' | 'sk') {
+    if (!('serviceWorker' in navigator)) return
+    const reg = await navigator.serviceWorker.getRegistration('/')
+    const sub = await reg?.pushManager.getSubscription()
+    if (!sub) return
+    await supabase.from(TABLE).update({ locale: code }).eq('endpoint', sub.endpoint)
+  }
+
   /** Asks the API to send today's summary (or a hello) to this device now. */
   async function test() {
     const sub = await (await registration()).pushManager.getSubscription()
     const { data: { session } } = await supabase.auth.getSession()
-    if (!sub || !session) throw new Error('Turn reminders on first.')
+    if (!sub || !session) throw new Error(i18n.t('reminders.turnOnFirst'))
     return await $fetch<{ devices: number, sent: number }>(`${apiUrl}/push/test`, {
       method: 'POST',
       headers: { authorization: `Bearer ${session.access_token}` },
@@ -129,5 +141,5 @@ export function usePush() {
     })
   }
 
-  return { state, hour, refresh, enable, disable, setHour, test }
+  return { state, hour, refresh, enable, disable, setHour, test, syncLocale }
 }

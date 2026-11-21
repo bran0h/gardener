@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { homes, current, ensure, select, create } = useHomes()
 const { push } = useToast()
+const { t } = useI18n()
 
 const open = ref(false)
 const adding = ref(false)
@@ -43,7 +44,7 @@ async function add() {
   busy.value = true
   try {
     await create(name)
-    push(`Welcome to ${name} 🏡`)
+    push(t('homes.welcome', { name }))
     close()
     navigateTo('/')
   } catch (e) {
@@ -60,7 +61,7 @@ async function add() {
       type="button"
       class="chip max-w-40 bg-white! py-0.5 text-base sm:max-w-56"
       :aria-expanded="open"
-      aria-label="Switch home"
+      :aria-label="$t('homes.switchAria')"
       @click="open ? close() : (open = true)"
     >
       <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -88,7 +89,7 @@ async function add() {
           @click="pick(h.id)"
         >
           <span class="truncate">{{ h.name }}</span>
-          <span class="shrink-0 text-sm text-ink-soft">{{ h.id === current.id ? '✓' : h.role === 'owner' ? 'owner' : '' }}</span>
+          <span class="shrink-0 text-sm text-ink-soft">{{ h.id === current.id ? '✓' : h.role === 'owner' ? $t('homes.owner') : '' }}</span>
         </button>
 
         <div class="my-1 border-t-2 border-dashed border-ink/15" />
@@ -99,7 +100,7 @@ async function add() {
           class="rounded-lg px-3 py-1.5 text-lg hover:bg-sun-light"
           @click="close"
         >
-          ⚙︎ {{ current.name }}: people &amp; invites
+          {{ $t('homes.settings', { name: current.name }) }}
         </NuxtLink>
 
         <form v-if="adding" class="flex gap-2 px-1 py-1" @submit.prevent="add">
@@ -107,16 +108,16 @@ async function add() {
             ref="input"
             v-model="newName"
             class="input py-1!"
-            placeholder="e.g. Cottage"
+            :placeholder="$t('homes.newHomePlaceholder')"
             maxlength="60"
-            aria-label="Name of the new home"
+            :aria-label="$t('homes.newHomeAria')"
           >
           <button type="submit" class="btn btn-leaf btn-sm" :disabled="busy || !newName.trim()">
-            Add
+            {{ $t('common.add') }}
           </button>
         </form>
         <button v-else type="button" role="menuitem" class="rounded-lg px-3 py-1.5 text-left text-lg hover:bg-leaf-light" @click="startAdding">
-          + New home
+          {{ $t('homes.newHome') }}
         </button>
       </div>
     </Transition>

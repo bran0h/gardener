@@ -15,13 +15,15 @@ const props = withDefaults(defineProps<{
 }>(), {
   max: undefined,
   min: undefined,
-  placeholder: 'Pick a day',
+  placeholder: undefined,
   clearable: false,
   quick: true,
   id: undefined,
   ariaLabel: undefined
 })
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+const { t } = useI18n()
+const { tag } = useFormat()
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -42,9 +44,9 @@ const disabledKey = (key: string) => (!!maxKey.value && key > maxKey.value) || (
 
 const label = computed(() => {
   if (!selected.value) return ''
-  const text = selected.value.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-  if (props.modelValue === todayKey) return `${text} · today`
-  if (props.modelValue === yesterdayKey) return `${text} · yesterday`
+  const text = selected.value.toLocaleDateString(tag.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  if (props.modelValue === todayKey) return `${text} · ${t('datePicker.todayTag')}`
+  if (props.modelValue === yesterdayKey) return `${text} · ${t('datePicker.yesterdayTag')}`
   return text
 })
 
@@ -56,14 +58,14 @@ const root = ref<HTMLElement>()
 const trigger = ref<HTMLButtonElement>()
 const panel = ref<HTMLElement>()
 
-const weekdays = Array.from({ length: 7 }, (_, i) =>
-  new Date(2024, 0, 1 + i).toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)
-)
-const monthNames = Array.from({ length: 12 }, (_, i) =>
-  new Date(2024, i, 1).toLocaleDateString(undefined, { month: 'short' })
-)
+const weekdays = computed(() => Array.from({ length: 7 }, (_, i) =>
+  new Date(2024, 0, 1 + i).toLocaleDateString(tag.value, { weekday: 'short' }).slice(0, 2)
+))
+const monthNames = computed(() => Array.from({ length: 12 }, (_, i) =>
+  new Date(2024, i, 1).toLocaleDateString(tag.value, { month: 'short' })
+))
 const monthTitle = computed(() =>
-  cursor.value.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  cursor.value.toLocaleDateString(tag.value, { month: 'long', year: 'numeric' })
 )
 
 const days = computed(() => {
@@ -188,7 +190,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
       :aria-expanded="open"
       @click="open ? close(false) : openPicker()"
     >
-      <span :class="label ? '' : 'text-ink-soft/70'">{{ label || placeholder }}</span>
+      <span :class="label ? '' : 'text-ink-soft/70'">{{ label || placeholder || $t('datePicker.pick') }}</span>
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path class="fill-sun-light" d="M4 6.5 Q12 5.5 20 6.5 L19.5 20 Q12 20.8 4.5 20 Z" />
         <path d="M4.2 10.5 Q12 9.8 19.8 10.5 M8 4 v4 M16 4 v4" />
@@ -205,7 +207,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
         ref="panel"
         role="dialog"
         aria-modal="false"
-        :aria-label="ariaLabel || 'Choose a date'"
+        :aria-label="ariaLabel || $t('datePicker.choose')"
         class="card fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 p-3! sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:mt-2 sm:w-80"
       >
         <!-- header -->
@@ -213,7 +215,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
           <button
             type="button"
             class="btn btn-ghost btn-sm px-2!"
-            :aria-label="view === 'days' ? 'Previous month' : 'Previous year'"
+            :aria-label="view === 'days' ? $t('datePicker.prevMonth') : $t('datePicker.prevYear')"
             @click="view === 'days' ? moveMonth(-1) : show(new Date(cursor.getFullYear() - 1, cursor.getMonth(), 1))"
           >
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12.5 Q12 11.5 5.5 12 M10 7 Q7 10 5 12 Q7.5 14.5 10.5 17" /></svg>
@@ -221,7 +223,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
           <button
             type="button"
             class="btn btn-ghost btn-sm font-script text-2xl! font-bold"
-            :aria-label="view === 'days' ? 'Choose month and year' : 'Back to days'"
+            :aria-label="view === 'days' ? $t('datePicker.chooseMonth') : $t('datePicker.backToDays')"
             @click="view = view === 'days' ? 'months' : 'days'"
           >
             {{ view === 'days' ? monthTitle : cursor.getFullYear() }}
@@ -229,7 +231,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
           <button
             type="button"
             class="btn btn-ghost btn-sm px-2!"
-            :aria-label="view === 'days' ? 'Next month' : 'Next year'"
+            :aria-label="view === 'days' ? $t('datePicker.nextMonth') : $t('datePicker.nextYear')"
             :disabled="view === 'days' ? !canNext : !!max && cursor.getFullYear() >= Number(max.slice(0, 4))"
             @click="view === 'days' ? moveMonth(1) : show(new Date(cursor.getFullYear() + 1, cursor.getMonth(), 1))"
           >
@@ -253,7 +255,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
               :disabled="d.disabled"
               :aria-selected="d.selected"
               :aria-current="d.today ? 'date' : undefined"
-              :aria-label="parse(d.key)!.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })"
+              :aria-label="parse(d.key)!.toLocaleDateString(tag, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })"
               class="relative mx-auto flex size-10 items-center justify-center text-lg transition focus-visible:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-25"
               :class="[
                 d.selected ? 'sketch bg-leaf font-bold text-white shadow-sketch-sm' : 'rounded-full hover:bg-leaf-light',
@@ -298,10 +300,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
         <div v-if="quick || clearable" class="mt-3 flex flex-wrap items-center gap-2 border-t-2 border-dashed border-ink/15 pt-3">
           <template v-if="quick">
             <button type="button" class="chip bg-white!" :disabled="disabledKey(todayKey)" @click="pick(todayKey)">
-              Today
+              {{ $t('datePicker.today') }}
             </button>
             <button type="button" class="chip bg-white!" :disabled="disabledKey(yesterdayKey)" @click="pick(yesterdayKey)">
-              Yesterday
+              {{ $t('datePicker.yesterday') }}
             </button>
           </template>
           <button
@@ -310,7 +312,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
             class="chip ml-auto bg-rose-light!"
             @click="emit('update:modelValue', ''); close()"
           >
-            Clear
+            {{ $t('datePicker.clear') }}
           </button>
         </div>
       </div>

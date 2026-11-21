@@ -7,30 +7,6 @@ export type Light = typeof LIGHTS[number]
 export const CARE_KINDS = ['water', 'repot', 'prune', 'mist', 'note'] as const
 export type CareKind = typeof CARE_KINDS[number]
 
-export const KIND_LABELS: Record<PlantKind, string> = {
-  leafy: 'Leafy',
-  succulent: 'Succulent',
-  cactus: 'Cactus',
-  flower: 'Flowering',
-  herb: 'Herb',
-  hanging: 'Trailing',
-  tree: 'Tree'
-}
-
-export const LIGHT_LABELS: Record<Light, string> = {
-  low: 'Shade',
-  medium: 'Indirect light',
-  bright: 'Bright sun'
-}
-
-export const CARE_LABELS: Record<CareKind, { verb: string, past: string }> = {
-  water: { verb: 'Water', past: 'Watered' },
-  repot: { verb: 'Repot', past: 'Repotted' },
-  prune: { verb: 'Prune', past: 'Pruned' },
-  mist: { verb: 'Mist', past: 'Misted' },
-  note: { verb: 'Note', past: 'Note' }
-}
-
 export type Plant = {
   id: string
   /** Who added it. Access is by home. */
@@ -74,6 +50,7 @@ export type PushSubscriptionRow = {
   auth: string
   remind_hour: number
   timezone: string
+  locale: 'en' | 'sk'
   user_agent: string | null
   last_reminded_on: string | null
   last_sent_at: string | null

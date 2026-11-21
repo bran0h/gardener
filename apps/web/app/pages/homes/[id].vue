@@ -10,6 +10,7 @@ const {
 } = useHomes()
 const { push } = useToast()
 const user = useSupabaseUser()
+const { t } = useI18n()
 
 const home = computed(() => homes.value.find(h => h.id === id) ?? null)
 const isOwner = computed(() => home.value?.role === 'owner')
@@ -33,7 +34,7 @@ onMounted(async () => {
   try {
     await ensure()
     if (!home.value) {
-      error.value = "This home doesn't exist, or you're not in it."
+      error.value = t('homePage.notFound')
       return
     }
     select(id)
@@ -67,14 +68,14 @@ async function saveName() {
     renaming.value = false
     return
   }
-  await run(() => rename(id, n), 'Renamed')
+  await run(() => rename(id, n), t('homePage.renamed'))
   renaming.value = false
 }
 
-const displayName = (p: HomePerson) => p.full_name || p.email?.split('@')[0] || 'Someone'
+const displayName = (p: HomePerson) => p.full_name || p.email?.split('@')[0] || t('common.someone')
 const expiresIn = (iso: string) => {
   const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000)
-  return days <= 1 ? 'expires today' : `expires in ${days} days`
+  return days <= 1 ? t('homePage.expiresToday') : t('homePage.expiresIn', { n: days }, days)
 }
 
 async function newInvite() {
@@ -86,7 +87,7 @@ async function newInvite() {
 
 async function share(inv: HomeInvite) {
   const url = inviteUrl(inv.token)
-  const text = `Join "${home.value?.name}" on Gardener so we can look after the plants together 🌱`
+  const text = t('homePage.shareText', { home: home.value?.name ?? '' })
   try {
     if (navigator.share) {
       await navigator.share({ title: 'Gardener', text, url })
@@ -97,31 +98,31 @@ async function share(inv: HomeInvite) {
   }
   try {
     await navigator.clipboard.writeText(url)
-    push('Invite link copied')
+    push(t('homePage.linkCopied'))
   } catch {
-    push('Could not copy. Long-press the link to copy it.', 'rose')
+    push(t('homePage.copyFailed'), 'rose')
   }
 }
 
 async function revoke(inv: HomeInvite) {
-  await run(() => revokeInvite(inv.id), 'Link revoked')
+  await run(() => revokeInvite(inv.id), t('homePage.linkRevoked'))
   invites.value = invites.value.filter(i => i.id !== inv.id)
 }
 
 async function makeOwner(p: HomePerson) {
-  await run(() => setRole(id, p.user_id, 'owner'), `${displayName(p)} is now an owner`)
+  await run(() => setRole(id, p.user_id, 'owner'), t('homePage.nowOwner', { name: displayName(p) }))
   await load()
 }
 
 async function stepDown(p: HomePerson) {
-  await run(() => setRole(id, p.user_id, 'member'), 'You are a member now')
+  await run(() => setRole(id, p.user_id, 'member'), t('homePage.nowMember'))
   await ensure().then(() => useHomes().refresh())
   await load()
 }
 
 const confirmRemove = ref<string | null>(null)
 async function remove(p: HomePerson) {
-  await run(() => removePerson(id, p.user_id), `${displayName(p)} was removed`)
+  await run(() => removePerson(id, p.user_id), t('homePage.removed', { name: displayName(p) }))
   confirmRemove.value = null
   await load()
 }
@@ -131,7 +132,7 @@ async function leaveHome() {
   const ok = await run(async () => {
     await leave(id)
     return true
-  }, `You left ${home.value?.name}`)
+  }, t('homePage.left', { name: home.value?.name ?? '' }))
   if (ok) navigateTo('/')
 }
 
@@ -141,7 +142,7 @@ async function deleteHome() {
   const ok = await run(async () => {
     await destroy(id)
     return true
-  }, `Deleted ${n}`)
+  }, t('homePage.deleted', { name: n ?? '' }))
   if (ok) navigateTo('/')
 }
 </script>
@@ -149,26 +150,26 @@ async function deleteHome() {
 <template>
   <div class="mx-auto flex max-w-2xl flex-col gap-8">
     <NuxtLink to="/" class="text-ink-soft hover:underline">
-      ← Plants
+      {{ $t('homePage.back') }}
     </NuxtLink>
 
     <p v-if="error" class="sketch bg-rose-light px-4 py-3" role="alert">
       {{ error }}
     </p>
     <p v-else-if="loading" class="text-ink-soft">
-      Loading…
+      {{ $t('common.loading') }}
     </p>
 
     <template v-else-if="home">
       <!-- name -->
       <section>
         <form v-if="renaming" class="flex flex-wrap items-center gap-2" @submit.prevent="saveName">
-          <input v-model="name" class="input max-w-sm text-3xl!" maxlength="60" aria-label="Home name">
+          <input v-model="name" class="input max-w-sm text-3xl!" maxlength="60" :aria-label="$t('homePage.nameAria')">
           <button type="submit" class="btn btn-leaf" :disabled="busy || !name.trim()">
-            Save
+            {{ $t('common.save') }}
           </button>
           <button type="button" class="btn btn-ghost" @click="renaming = false; name = home.name">
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
         </form>
         <div v-else class="flex flex-wrap items-end gap-3">
@@ -176,18 +177,18 @@ async function deleteHome() {
             {{ home.name }}
           </h1>
           <button v-if="isOwner" type="button" class="btn btn-ghost btn-sm mb-2" @click="renaming = true">
-            Rename
+            {{ $t('homePage.rename') }}
           </button>
         </div>
         <p class="mt-2 text-ink-soft">
-          Everyone here sees the same plants, waters them and gets the morning reminders.
+          {{ $t('homePage.shared') }}
         </p>
       </section>
 
       <!-- people -->
       <section class="card flex flex-col gap-3">
         <h2 class="text-4xl">
-          People
+          {{ $t('homePage.people') }}
         </h2>
         <ul class="flex flex-col divide-y-2 divide-dashed divide-ink/15">
           <li v-for="p in people" :key="p.user_id" class="flex flex-wrap items-center gap-3 py-2">
@@ -203,13 +204,13 @@ async function deleteHome() {
             </span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-lg">
-                {{ displayName(p) }}<span v-if="p.user_id === me" class="text-ink-soft"> (you)</span>
+                {{ displayName(p) }}<span v-if="p.user_id === me" class="text-ink-soft"> ({{ $t('common.you') }})</span>
               </p>
               <p class="truncate text-sm text-ink-soft">
                 {{ p.email }}
               </p>
             </div>
-            <span class="chip" :class="p.role === 'owner' ? 'bg-sun-light!' : 'bg-white!'">{{ p.role }}</span>
+            <span class="chip" :class="p.role === 'owner' ? 'bg-sun-light!' : 'bg-white!'">{{ $t(`homes.${p.role}`) }}</span>
 
             <div v-if="isOwner && p.user_id !== me" class="flex w-full justify-end gap-2 sm:w-auto">
               <button
@@ -219,7 +220,7 @@ async function deleteHome() {
                 :disabled="busy"
                 @click="makeOwner(p)"
               >
-                Make owner
+                {{ $t('homePage.makeOwner') }}
               </button>
               <button
                 v-if="confirmRemove !== p.user_id"
@@ -228,20 +229,20 @@ async function deleteHome() {
                 :disabled="busy"
                 @click="confirmRemove = p.user_id"
               >
-                Remove
+                {{ $t('common.remove') }}
               </button>
               <template v-else>
                 <button type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="remove(p)">
-                  Yes, remove
+                  {{ $t('homePage.yesRemove') }}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" @click="confirmRemove = null">
-                  Keep
+                  {{ $t('homePage.keep') }}
                 </button>
               </template>
             </div>
             <div v-else-if="isOwner && p.user_id === me && people.filter(x => x.role === 'owner').length > 1" class="flex w-full justify-end sm:w-auto">
               <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="stepDown(p)">
-                Step down
+                {{ $t('homePage.stepDown') }}
               </button>
             </div>
           </li>
@@ -251,15 +252,14 @@ async function deleteHome() {
       <!-- invites -->
       <section v-if="isOwner" class="note flex flex-col gap-3">
         <h2 class="text-4xl">
-          Invite someone
+          {{ $t('homePage.inviteTitle') }}
         </h2>
         <p>
-          Send a link by message. Whoever opens it and signs in with Google joins
-          <b>{{ home.name }}</b>. Links work for 7 days, for anyone you send them to.
+          {{ $t('homePage.inviteText', { home: home.name }) }}
         </p>
         <div>
           <button type="button" class="btn btn-leaf" :disabled="busy" @click="newInvite">
-            Create invite link
+            {{ $t('homePage.createLink') }}
           </button>
         </div>
         <ul v-if="invites.length" class="flex flex-col gap-2">
@@ -267,50 +267,49 @@ async function deleteHome() {
             <code class="min-w-0 flex-1 truncate text-sm select-all">{{ inviteUrl(inv.token) }}</code>
             <span class="text-sm text-ink-soft">{{ expiresIn(inv.expires_at) }}</span>
             <button type="button" class="btn btn-sm" @click="share(inv)">
-              Share
+              {{ $t('homePage.share') }}
             </button>
             <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="revoke(inv)">
-              Revoke
+              {{ $t('homePage.revoke') }}
             </button>
           </li>
         </ul>
       </section>
       <p v-else class="text-ink-soft">
-        Want someone else here? Ask an owner to send them an invite link.
+        {{ $t('homePage.askOwner') }}
       </p>
 
       <!-- leave / delete -->
       <section class="flex flex-col gap-3">
         <div class="flex flex-wrap gap-2">
           <button v-if="!confirmLeave" type="button" class="btn btn-ghost" @click="confirmLeave = true">
-            Leave {{ home.name }}
+            {{ $t('homePage.leave', { name: home.name }) }}
           </button>
           <template v-else>
             <button type="button" class="btn btn-danger" :disabled="busy" @click="leaveHome">
-              Yes, leave
+              {{ $t('homePage.yesLeave') }}
             </button>
             <button type="button" class="btn btn-ghost" @click="confirmLeave = false">
-              Stay
+              {{ $t('homePage.stay') }}
             </button>
           </template>
         </div>
         <p v-if="confirmLeave && isOwner && people.filter(x => x.role === 'owner').length < 2" class="text-sm text-ink-soft">
-          You're the only owner: make someone else an owner first, or delete the home.
+          {{ $t('homePage.onlyOwner') }}
         </p>
 
         <details v-if="isOwner" class="mt-2">
           <summary class="cursor-pointer text-ink-soft">
-            Delete this home…
+            {{ $t('homePage.deleteSummary') }}
           </summary>
           <div class="sketch mt-3 flex flex-col gap-2 bg-rose-light/60 p-3">
             <p>
-              This deletes <b>{{ home.name }}</b> with all its plants and diaries, for everyone in it.
-              Type the name to confirm.
+              {{ $t('homePage.deleteText', { name: home.name }) }}
             </p>
             <div class="flex flex-wrap gap-2">
-              <input v-model="confirmDelete" class="input max-w-60" :placeholder="home.name" aria-label="Type the home name to confirm">
+              <input v-model="confirmDelete" class="input max-w-60" :placeholder="home.name" :aria-label="$t('homePage.deleteConfirmAria')">
               <button type="button" class="btn btn-danger" :disabled="busy || confirmDelete.trim() !== home.name" @click="deleteHome">
-                Delete for everyone
+                {{ $t('homePage.deleteForEveryone') }}
               </button>
             </div>
           </div>

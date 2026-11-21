@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/supabase'],
+  modules: ['@nuxtjs/supabase', '@nuxtjs/i18n'],
 
   // Personal app behind a login: render in the browser only.
   ssr: false,
@@ -44,6 +44,22 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()]
+  },
+
+  i18n: {
+    locales: [
+      { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' },
+      { code: 'sk', language: 'sk-SK', name: 'Slovenčina', file: 'sk.json' }
+    ],
+    defaultLocale: 'en',
+    // Personal app: no /sk prefix in URLs, the choice lives in a cookie.
+    strategy: 'no_prefix',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_locale',
+      fallbackLocale: 'en'
+    },
+    vueI18n: './i18n.config.ts'
   },
 
   supabase: {

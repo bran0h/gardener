@@ -33,6 +33,10 @@ export default class PushSubscription extends BaseModel {
   @column()
   declare timezone: string
 
+  /** Language the notifications are written in. */
+  @column()
+  declare locale: 'en' | 'sk'
+
   /** The local date the summary was last handled for (sent or nothing due). */
   @column.date()
   declare lastRemindedOn: DateTime | null

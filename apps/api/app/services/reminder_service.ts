@@ -69,11 +69,51 @@ export function daysUntilDue(
   return dayNumber(localDate(last.toJSDate(), timeZone)) + everyDays - dayNumber(today)
 }
 
-function names(list: Plant[], max = 3): string {
+export type Locale = 'en' | 'sk'
+
+/** Slovak plural: 1 / 2–4 / 0 and 5+. */
+function sk(n: number, one: string, few: string, many: string) {
+  return n === 1 ? one : n >= 2 && n <= 4 ? few : many
+}
+
+const TEXT = {
+  en: {
+    and: 'and',
+    more: (n: number) => `and ${n} more`,
+    oneThirsty: (name: string) => `💧 ${name} is thirsty`,
+    manyThirsty: (n: number) => `💧 ${n} plants are thirsty`,
+    water: (what: string) => `Water ${what}.`,
+    waterGrouped: (what: string) => `Water ${what}.`,
+    tapToMark: 'Tap to mark it done.',
+    home: 'Home',
+    testTitle: '🌱 Reminders work!',
+    testBody: 'Nobody needs water right now. You will hear from me when someone gets thirsty.',
+  },
+  sk: {
+    and: 'a',
+    more: (n: number) => `a ${sk(n, 'ďalšia', 'ďalšie', 'ďalších')} ${n}`,
+    oneThirsty: (name: string) => `💧 ${name} potrebuje vodu`,
+    manyThirsty: (n: number) => `💧 ${n} ${sk(n, 'rastlina potrebuje', 'rastliny potrebujú', 'rastlín potrebuje')} vodu`,
+    // Names stay in the nominative: user-chosen names cannot be declined.
+    water: (what: string) => `Treba poliať: ${what}.`,
+    waterGrouped: (what: string) => `Treba poliať – ${what}.`,
+    tapToMark: 'Ťukni a odškrtni polievanie.',
+    home: 'Domov',
+    testTitle: '🌱 Pripomienky fungujú!',
+    testBody: 'Teraz nikto nepotrebuje vodu. Ozvem sa, keď bude niekto smädný.',
+  },
+} satisfies Record<Locale, unknown>
+
+export function texts(locale: string | null | undefined) {
+  return TEXT[locale === 'sk' ? 'sk' : 'en']
+}
+
+function names(list: Plant[], locale: Locale, max = 3): string {
+  const t = texts(locale)
   const shown = list.slice(0, max).map((p) => p.name)
   const rest = list.length - shown.length
-  if (rest > 0) return `${shown.join(', ')} and ${rest} more`
-  if (shown.length > 1) return `${shown.slice(0, -1).join(', ')} and ${shown.at(-1)}`
+  if (rest > 0) return `${shown.join(', ')} ${t.more(rest)}`
+  if (shown.length > 1) return `${shown.slice(0, -1).join(', ')} ${t.and} ${shown.at(-1)}`
   return shown[0] ?? ''
 }
 
@@ -85,31 +125,32 @@ export function buildDigest(
   plants: Plant[],
   today: string,
   timeZone: string,
-  homeNames: Map<string, string> = new Map()
+  homeNames: Map<string, string> = new Map(),
+  locale: Locale = 'en'
 ): PushPayload | null {
+  const t = texts(locale)
   const thirsty = plants.filter((p) => {
     const d = daysUntilDue(p.lastWateredAt, p.waterEveryDays, today, timeZone)
     return d !== null && d <= 0
   })
   if (!thirsty.length) return null
 
-  const title =
-    thirsty.length === 1
-      ? `💧 ${thirsty[0]!.name} is thirsty`
-      : `💧 ${thirsty.length} plants are thirsty`
+  const title = thirsty.length === 1 ? t.oneThirsty(thirsty[0]!.name) : t.manyThirsty(thirsty.length)
 
   const homesInvolved = new Set(thirsty.map((p) => p.homeId))
   let body: string
   if (homesInvolved.size > 1) {
     const groups = new Map<string, Plant[]>()
     for (const p of thirsty) groups.set(p.homeId, [...(groups.get(p.homeId) ?? []), p])
-    body = `Water ${[...groups.entries()]
-      .map(([id, ps]) => `${homeNames.get(id) ?? 'Home'}: ${names(ps, 2)}`)
-      .join(' · ')}.`
+    body = t.waterGrouped(
+      [...groups.entries()]
+        .map(([id, ps]) => `${homeNames.get(id) ?? t.home}: ${names(ps, locale, 2)}`)
+        .join(' · ')
+    )
   } else if (thirsty.length > 1) {
-    body = `Water ${names(thirsty)}.`
+    body = t.water(names(thirsty, locale))
   } else {
-    body = 'Tap to mark it done.'
+    body = t.tapToMark
   }
 
   return { title, body, url: '/', tag: `gardener-${today}` }
@@ -161,7 +202,7 @@ export class ReminderService {
       const today = localDate(now, tz)
 
       const payload = allowed.has(sub.userId)
-        ? buildDigest(plantsOf(sub.userId), today, tz, homeNames)
+        ? buildDigest(plantsOf(sub.userId), today, tz, homeNames, sub.locale)
         : null
 
       if (payload) {
@@ -204,9 +245,10 @@ export class ReminderService {
     let sent = 0
     for (const sub of subs) {
       const tz = safeZone(sub.timezone)
-      const payload = buildDigest(plants, localDate(new Date(), tz), tz, homeNames) ?? {
-        title: '🌱 Reminders work!',
-        body: 'Nobody needs anything right now. You will hear from me when someone gets thirsty.',
+      const t = texts(sub.locale)
+      const payload = buildDigest(plants, localDate(new Date(), tz), tz, homeNames, sub.locale) ?? {
+        title: t.testTitle,
+        body: t.testBody,
         url: '/',
         tag: 'gardener-test',
       }

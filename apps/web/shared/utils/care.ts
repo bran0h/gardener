@@ -27,27 +27,9 @@ export function dueState(days: number | null): DueState {
   return 'ok'
 }
 
-export function dueLabel(days: number | null): string {
-  if (days === null) return 'no schedule'
-  if (days < -1) return `${-days} days late`
-  if (days === -1) return 'a day late'
-  if (days === 0) return 'today'
-  if (days === 1) return 'tomorrow'
-  return `in ${days} days`
-}
-
-export function relativeDay(iso: string | null, now = new Date()): string {
-  if (!iso) return 'never'
-  const diff = Math.round((startOfDay(now).getTime() - startOfDay(new Date(iso)).getTime()) / DAY)
-  if (diff <= 0) return 'today'
-  if (diff === 1) return 'yesterday'
-  if (diff < 14) return `${diff} days ago`
-  if (diff < 60) return `${Math.round(diff / 7)} weeks ago`
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-export function formatDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+/** Whole calendar days from an instant until today (0 = today). */
+export function daysSince(iso: string, now = new Date()): number {
+  return Math.round((startOfDay(now).getTime() - startOfDay(new Date(iso)).getTime()) / DAY)
 }
 
 /** Today as yyyy-mm-dd in local time, for <input type="date">. */
