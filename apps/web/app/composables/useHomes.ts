@@ -33,6 +33,8 @@ export function useHomes() {
   const homes = useState<Home[]>('homes', () => [])
   const loaded = useState('homes-loaded', () => false)
   const currentId = useState<string | null>('home-id', () => null)
+  /** People per home, cached: who watered, who wrote a diary entry. */
+  const peopleCache = useState<Record<string, HomePerson[]>>('home-people', () => ({}))
 
   const current = computed<Home | null>(() =>
     homes.value.find(h => h.id === currentId.value) ?? homes.value[0] ?? null
@@ -125,7 +127,26 @@ export function useHomes() {
   async function people(id: string): Promise<HomePerson[]> {
     const { data, error } = await supabase.rpc('gardener_home_people', { home: id })
     if (error) throw error
+    peopleCache.value = { ...peopleCache.value, [id]: data }
     return data
+  }
+
+  /** Loads a home's people once (for names on cards and in the diary). */
+  async function ensurePeople(id: string) {
+    if (!peopleCache.value[id]) await people(id)
+  }
+
+  /** First name of someone in a home; null when they are not (any more). */
+  function firstName(homeId: string, userId: string | null): string | null {
+    if (!userId) return null
+    const p = peopleCache.value[homeId]?.find(x => x.user_id === userId)
+    if (!p) return null
+    return (p.full_name || p.email?.split('@')[0] || '').split(' ')[0] || null
+  }
+
+  /** More than one person shares this home. */
+  function isShared(homeId: string): boolean {
+    return (peopleCache.value[homeId]?.length ?? 0) > 1
   }
 
   async function setRole(homeId: string, userId: string, role: HomeRole) {
@@ -180,6 +201,7 @@ export function useHomes() {
   }
 
   function clear() {
+    peopleCache.value = {}
     homes.value = []
     loaded.value = false
     currentId.value = null
@@ -188,7 +210,7 @@ export function useHomes() {
   return {
     homes, loaded, current, currentId, isOwner,
     refresh, ensure, select, create, rename, destroy, leave,
-    people, setRole, removePerson,
+    people, ensurePeople, firstName, isShared, setRole, removePerson,
     invites, createInvite, revokeInvite, inviteUrl,
     preview, accept, clear
   }

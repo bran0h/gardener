@@ -1,3 +1,19 @@
+<script setup lang="ts">
+const { startLive, refresh, loaded } = usePlants()
+
+// Changes by others in the same home stream in live. A backgrounded app (an
+// iPhone Home Screen app especially) can miss some, so catch up on return.
+function onVisible() {
+  if (document.visibilityState === 'visible' && loaded.value) refresh().catch(() => {})
+}
+
+onMounted(() => {
+  startLive()
+  document.addEventListener('visibilitychange', onVisible)
+})
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
+</script>
+
 <template>
   <div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:px-6">
     <header class="flex items-center justify-between gap-3 py-4 sm:py-6">

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { CARE_KINDS, type CareKind, type CareLog } from '~/types/plant'
+import { LOGGABLE_KINDS, type CareKind, type CareLog } from '~/types/plant'
 
 const route = useRoute()
 const id = String(route.params.id)
-const { plants, fetchPlant, listLogs, logCare, deleteLog, deletePlant, photoUrl } = usePlants()
+const { plants, fetchPlant, listLogs, logCare, skipToday, deleteLog, deletePlant, photoUrl, watchDiary } = usePlants()
 const { push } = useToast()
-const { ensure: ensureHomes, select: selectHome, people: homePeople } = useHomes()
+const { ensure: ensureHomes, select: selectHome, ensurePeople, firstName, isShared } = useHomes()
 const user = useSupabaseUser()
 const { t } = useI18n()
 const { date, relativeDay, formatDay } = useFormat()
@@ -13,13 +13,16 @@ const { date, relativeDay, formatDay } = useFormat()
 const plant = computed(() => plants.value.find(p => p.id === id) ?? null)
 
 // Who logged what, when more than one person shares the home.
-const names = ref<Record<string, string>>({})
-const shared = computed(() => Object.keys(names.value).length > 1)
 function who(userId: string) {
-  if (!shared.value) return ''
+  const homeId = plant.value?.home_id
+  if (!homeId || !isShared(homeId)) return ''
   if (userId === user.value?.sub) return t('common.you')
-  return names.value[userId] ?? t('plant.someoneWhoLeft')
+  return firstName(homeId, userId) ?? t('plant.someoneWhoLeft')
 }
+
+// The diary updates live when someone else in the home writes to it.
+let stopDiary: (() => void) | null = null
+onBeforeUnmount(() => stopDiary?.())
 const logs = ref<CareLog[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -32,15 +35,16 @@ onMounted(async () => {
       return
     }
     selectHome(p.home_id)
-    const [entries, people] = await Promise.all([
+    const [entries] = await Promise.all([
       listLogs(id),
-      ensureHomes().then(() => homePeople(p.home_id)).catch(() => [])
+      ensureHomes().then(() => ensurePeople(p.home_id)).catch(() => {})
     ])
     logs.value = entries
-    names.value = Object.fromEntries(people.map(x => [
-      x.user_id,
-      (x.full_name || x.email?.split('@')[0] || t('common.someone')).split(' ')[0]!
-    ]))
+    stopDiary = watchDiary(id, () => {
+      listLogs(id).then((l) => {
+        logs.value = l
+      }).catch(() => {})
+    })
   } catch (e) {
     error.value = errMsg(e)
   } finally {
@@ -50,7 +54,7 @@ onMounted(async () => {
 
 useHead({ title: () => plant.value ? `${plant.value.name} · Gardener` : 'Gardener' })
 
-const waterDays = computed(() => plant.value && daysUntilDue(plant.value.last_watered_at, plant.value.water_every_days))
+const waterDays = computed(() => plant.value && plantDue(plant.value))
 
 const busy = ref(false)
 
@@ -64,6 +68,19 @@ async function record(kind: CareKind, note?: string | null, doneAt?: string) {
   } catch (e) {
     push(errMsg(e), 'rose')
     return false
+  } finally {
+    busy.value = false
+  }
+}
+
+async function skip() {
+  busy.value = true
+  try {
+    await skipToday([id])
+    logs.value = await listLogs(id)
+    push(t('plant.skipped', { name: plant.value?.name ?? '' }))
+  } catch (e) {
+    push(errMsg(e), 'rose')
   } finally {
     busy.value = false
   }
@@ -126,6 +143,7 @@ async function destroy() {
           <div class="card tape -rotate-1">
             <PlantPicture :src="photoUrl(plant)" :kind="plant.kind" :alt="plant.name" class="aspect-square w-full" />
           </div>
+          <PlantPhotos :plant="plant" />
           <dl class="card grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rotate-[0.4deg]">
             <dt class="text-ink-soft">
               {{ $t('plant.kind') }}
@@ -179,6 +197,16 @@ async function destroy() {
                 <button type="button" class="btn btn-water btn-sm" :disabled="busy" @click="record('water')">
                   {{ $t('plant.wateredNow') }}
                 </button>
+                <button
+                  v-if="plant.water_every_days"
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  :disabled="busy"
+                  :title="$t('plant.skipHint')"
+                  @click="skip"
+                >
+                  <CareIcon kind="skip" /> {{ $t('plant.skip') }}
+                </button>
               </div>
             </div>
           </div>
@@ -218,7 +246,7 @@ async function destroy() {
             <form v-if="showLog" class="card flex flex-col gap-3" @submit.prevent="addLog">
               <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="k in CARE_KINDS"
+                  v-for="k in LOGGABLE_KINDS"
                   :key="k"
                   type="button"
                   class="chip"

@@ -1,10 +1,24 @@
 <script setup lang="ts">
 import type { Plant } from '~/types/plant'
 
-const props = defineProps<{ plant: Plant, photo: string | null, busy?: boolean }>()
+const props = defineProps<{
+  plant: Plant
+  photo: string | null
+  busy?: boolean
+  /** First name of who watered last, in shared homes ("you" for yourself). */
+  wateredBy?: string | null
+}>()
 defineEmits<{ water: [] }>()
 
-const waterDays = computed(() => daysUntilDue(props.plant.last_watered_at, props.plant.water_every_days))
+const { t } = useI18n()
+const { relativeDay } = useFormat()
+
+const waterDays = computed(() => plantDue(props.plant))
+const lastWatered = computed(() => {
+  if (!props.plant.last_watered_at) return ''
+  const when = relativeDay(props.plant.last_watered_at)
+  return props.wateredBy ? t('plant.wateredBy', { who: props.wateredBy, when }) : t('plant.wateredWhen', { when })
+})
 </script>
 
 <template>
@@ -23,6 +37,10 @@ const waterDays = computed(() => daysUntilDue(props.plant.last_watered_at, props
         </h3>
         <p v-if="plant.species" class="truncate text-sm text-ink-soft italic">
           {{ plant.species }}
+        </p>
+        <p v-if="lastWatered" class="flex items-center gap-1 truncate text-sm text-ink-soft">
+          <CareIcon kind="water" class="size-3.5!" />
+          <span class="truncate">{{ lastWatered }}</span>
         </p>
       </NuxtLink>
       <div class="flex items-center justify-between gap-2 px-1">

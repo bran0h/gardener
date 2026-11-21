@@ -8,7 +8,7 @@ const props = defineProps<{ plant?: Plant | null }>()
 const emit = defineEmits<{ saved: [plant: Plant] }>()
 const { t } = useI18n()
 
-const { homePlants: plants, ensureLoaded, savePlant, uploadPhoto, removePhoto, logCare, photoUrl } = usePlants()
+const { homePlants: plants, ensureLoaded, savePlant, uploadPhoto, removePhoto, addToTimeline, logCare, photoUrl } = usePlants()
 const { ensure: ensureHomes, current: home } = useHomes()
 onMounted(() => {
   ensureLoaded().catch(() => {})
@@ -110,8 +110,9 @@ async function submit() {
     const saved = await savePlant(input, p?.id)
     uploaded = null
 
-    if (p?.photo_path && p.photo_path !== saved.photo_path) {
-      await removePhoto(p.photo_path).catch(() => {})
+    // A new photo joins the plant's timeline; earlier ones stay there.
+    if (saved.photo_path && saved.photo_path !== p?.photo_path) {
+      await addToTimeline(saved.id, saved.photo_path).catch(() => {})
     }
     if (!p && lastWatered.value && saved.water_every_days) {
       await logCare([saved.id], 'water', { doneAt: inputToIso(lastWatered.value) })

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { CareKind, Plant } from '~/types/plant'
 
-const { homePlants: plants, loaded: plantsLoaded, refresh, logCare, photoUrl } = usePlants()
-const { ensure: ensureHomes, current: home, homes } = useHomes()
+const { homePlants: plants, loaded: plantsLoaded, refresh, logCare, skipToday, photoUrl } = usePlants()
+const { ensure: ensureHomes, current: home, homes, ensurePeople, firstName: personName, isShared } = useHomes()
 const loaded = computed(() => plantsLoaded.value && !!home.value)
 const { push } = useToast()
 const user = useSupabaseUser()
@@ -13,6 +13,7 @@ const error = ref('')
 onMounted(async () => {
   try {
     await Promise.all([ensureHomes(), refresh()])
+    if (home.value) await ensurePeople(home.value.id).catch(() => {})
   } catch (e) {
     error.value = errMsg(e)
   }
@@ -32,11 +33,23 @@ const greeting = computed(() => {
 
 const today = computed(() => date(new Date(), { weekday: 'long', day: 'numeric', month: 'long' }))
 
+// Switching homes loads that home's people for the "watered by" line.
+watch(() => home.value?.id, (id) => {
+  if (id) ensurePeople(id).catch(() => {})
+})
+
+/** "Lucka" / "you" in shared homes; nothing when you live alone. */
+function wateredBy(p: Plant): string | null {
+  if (!p.last_watered_by || !isShared(p.home_id)) return null
+  if (p.last_watered_by === user.value?.sub) return t('common.you')
+  return personName(p.home_id, p.last_watered_by)
+}
+
 interface Due { plant: Plant, days: number }
 
 const thirsty = computed(() =>
   plants.value
-    .map(plant => ({ plant, days: daysUntilDue(plant.last_watered_at, plant.water_every_days) }))
+    .map(plant => ({ plant, days: plantDue(plant) }))
     .filter((x): x is Due => x.days !== null && x.days <= 0)
     .sort((a, b) => a.days - b.days)
 )
@@ -75,6 +88,19 @@ async function care(list: Plant[], kind: CareKind) {
     await logCare(ids, kind)
     const what = list.length === 1 ? list[0]!.name : t('dashboard.nPlants', { n: list.length }, list.length)
     push(t('dashboard.watered', { what }), 'water')
+  } catch (e) {
+    push(errMsg(e), 'rose')
+  } finally {
+    ids.forEach(id => busy.value.delete(id))
+  }
+}
+
+async function skip(list: Plant[]) {
+  const ids = list.map(p => p.id)
+  ids.forEach(id => busy.value.add(id))
+  try {
+    await skipToday(ids)
+    push(list.length === 1 ? t('plant.skipped', { name: list[0]!.name }) : t('plant.skippedMany', { n: list.length }, list.length))
   } catch (e) {
     push(errMsg(e), 'rose')
   } finally {
@@ -151,14 +177,26 @@ async function care(list: Plant[], kind: CareKind) {
                   {{ x.plant.location ?? $t('dashboard.somewhere') }} · {{ dueLabel(x.days) }}
                 </span>
               </NuxtLink>
-              <button
-                type="button"
-                class="btn btn-water btn-sm"
-                :disabled="busy.has(x.plant.id)"
-                @click="care([x.plant], 'water')"
-              >
-                <CareIcon kind="water" /> {{ $t('dashboard.done') }}
-              </button>
+              <div class="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm px-2!"
+                  :disabled="busy.has(x.plant.id)"
+                  :aria-label="`${$t('plant.skip')}: ${x.plant.name}`"
+                  :title="$t('plant.skipHint')"
+                  @click="skip([x.plant])"
+                >
+                  <CareIcon kind="skip" />
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-water btn-sm"
+                  :disabled="busy.has(x.plant.id)"
+                  @click="care([x.plant], 'water')"
+                >
+                  <CareIcon kind="water" /> {{ $t('dashboard.done') }}
+                </button>
+              </div>
             </li>
           </ul>
         </div>
@@ -215,6 +253,7 @@ async function care(list: Plant[], kind: CareKind) {
               :plant="p"
               :photo="photoUrl(p)"
               :busy="busy.has(p.id)"
+              :watered-by="wateredBy(p)"
               @water="care([p], 'water')"
             />
           </div>

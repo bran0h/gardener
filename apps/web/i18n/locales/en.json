@@ -92,7 +92,13 @@
     "saved": "Saved {name}",
     "newTitle": "A new green friend",
     "editTitle": "Edit {name}",
-    "plantFallback": "plant"
+    "plantFallback": "plant",
+    "skip": "Skip today",
+    "skipHint": "Soil is still wet – remind me tomorrow",
+    "skipped": "{name}: tomorrow then 👍",
+    "skippedMany": "Skipped {n} plant until tomorrow 👍 | Skipped {n} plants until tomorrow 👍",
+    "wateredWhen": "watered {when}",
+    "wateredBy": "{who}, {when}"
   },
   "form": {
     "addPhoto": "Add a photo",
@@ -154,6 +160,10 @@
     "note": {
       "verb": "Note",
       "past": "Note"
+    },
+    "skip": {
+      "verb": "Skip",
+      "past": "Skipped – soil still wet"
     }
   },
   "due": {
@@ -287,5 +297,19 @@
     "imageUnreadable": "This browser cannot read that image. Try a JPEG or PNG.",
     "imageProcess": "Could not process the image.",
     "photoTooBig": "That photo is too big."
+  },
+  "photos": {
+    "title": "Photos",
+    "add": "+ Photo",
+    "adding": "Adding…",
+    "empty": "No photos yet. Add one now and then to watch it grow.",
+    "cover": "Cover",
+    "makeCover": "Make cover",
+    "delete": "Delete photo",
+    "confirmDelete": "Yes, delete",
+    "added": "Photo added 📸",
+    "deleted": "Photo deleted",
+    "coverSet": "New cover",
+    "open": "Open photo from {date}"
   }
 }

@@ -4,8 +4,11 @@ export type PlantKind = typeof PLANT_KINDS[number]
 export const LIGHTS = ['low', 'medium', 'bright'] as const
 export type Light = typeof LIGHTS[number]
 
-export const CARE_KINDS = ['water', 'repot', 'prune', 'mist', 'note'] as const
+export const CARE_KINDS = ['water', 'skip', 'repot', 'prune', 'mist', 'note'] as const
 export type CareKind = typeof CARE_KINDS[number]
+
+/** Kinds you can write into the diary by hand (skip has its own button). */
+export const LOGGABLE_KINDS = ['water', 'repot', 'prune', 'mist', 'note'] as const satisfies readonly CareKind[]
 
 export type Plant = {
   id: string
@@ -19,6 +22,10 @@ export type Plant = {
   light: Light | null
   water_every_days: number | null
   last_watered_at: string | null
+  /** Who logged the latest watering. */
+  last_watered_by: string | null
+  /** yyyy-mm-dd: "soil still wet", not due again before this day. */
+  snoozed_until: string | null
   photo_path: string | null
   notes: string | null
   acquired_on: string | null
@@ -102,4 +109,14 @@ export type InvitePreview = {
   invited_by: string | null
   expires_at: string
   already_member: boolean
+}
+
+/** One photo in a plant's timeline (the plant's photo_path is the cover). */
+export type PlantPhoto = {
+  id: string
+  plant_id: string
+  path: string
+  taken_at: string
+  created_by: string | null
+  created_at: string
 }

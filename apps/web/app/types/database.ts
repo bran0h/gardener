@@ -1,5 +1,5 @@
 import type {
-  CareLog, HomeInvite, HomeMemberRow, HomePerson, HomeRow, InvitePreview, Plant, PushSubscriptionRow
+  CareLog, HomeInvite, HomeMemberRow, HomePerson, HomeRow, InvitePreview, Plant, PlantPhoto, PushSubscriptionRow
 } from './plant'
 
 /**
@@ -47,6 +47,12 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      gardener_plant_photos: {
+        Row: PlantPhoto
+        Insert: Pick<PlantPhoto, 'plant_id' | 'path'> & Partial<Pick<PlantPhoto, 'taken_at'>>
+        Update: Pick<PlantPhoto, 'taken_at'>
+        Relationships: []
+      }
       gardener_push_subscriptions: {
         Row: PushSubscriptionRow
         Insert: Pick<PushSubscriptionRow, 'endpoint' | 'p256dh' | 'auth'>
@@ -60,6 +66,10 @@ export type Database = {
       has_role: {
         Args: { role_name: string }
         Returns: boolean
+      }
+      gardener_skip_watering: {
+        Args: { plant_ids: string[], until: string }
+        Returns: undefined
       }
       gardener_ensure_home: {
         Args: Record<PropertyKey, never>

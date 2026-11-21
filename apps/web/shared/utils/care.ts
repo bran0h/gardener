@@ -17,6 +17,32 @@ export function daysUntilDue(last: string | null, everyDays: number | null, now 
   return Math.round((due - startOfDay(now).getTime()) / DAY)
 }
 
+/** Days from today until a yyyy-mm-dd date (negative when it has passed). */
+export function daysUntilDate(isoDate: string, now = new Date()): number {
+  return Math.round((startOfDay(new Date(`${isoDate}T00:00:00`)).getTime() - startOfDay(now).getTime()) / DAY)
+}
+
+/**
+ * Days until a plant needs water, honouring "skip today": a skipped plant is
+ * not due before its snooze date. Null when it has no schedule.
+ */
+export function plantDue(
+  p: { last_watered_at: string | null, water_every_days: number | null, snoozed_until?: string | null },
+  now = new Date()
+): number | null {
+  const days = daysUntilDue(p.last_watered_at, p.water_every_days, now)
+  if (days === null || !p.snoozed_until) return days
+  return Math.max(days, daysUntilDate(p.snoozed_until, now))
+}
+
+/** Tomorrow as yyyy-mm-dd in local time: what "skip today" snoozes until. */
+export function tomorrowInput(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 export type DueState = 'none' | 'late' | 'today' | 'soon' | 'ok'
 
 export function dueState(days: number | null): DueState {

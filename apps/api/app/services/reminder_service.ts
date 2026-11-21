@@ -131,7 +131,8 @@ export function buildDigest(
   const t = texts(locale)
   const thirsty = plants.filter((p) => {
     const d = daysUntilDue(p.lastWateredAt, p.waterEveryDays, today, timeZone)
-    return d !== null && d <= 0
+    const snoozed = !!p.snoozedUntil && p.snoozedUntil.toISODate()! > today
+    return d !== null && d <= 0 && !snoozed
   })
   if (!thirsty.length) return null
 
@@ -180,16 +181,23 @@ async function plantsForPeople(userIds: string[]) {
  */
 @inject()
 export class ReminderService {
+  /** When the last full run finished (for /health and monitoring). */
+  static lastRunAt: Date | null = null
+
   constructor(protected sender: PushSenderService) {}
 
   async run(now = new Date()): Promise<RunStats> {
     const stats: RunStats = { checked: 0, sent: 0, nothingDue: 0, removed: 0, failed: 0 }
 
-    const subs = (await PushSubscription.all()).filter((s) => {
+    const all = await PushSubscription.all()
+    const subs = all.filter((s) => {
       const tz = safeZone(s.timezone)
       return localHour(now, tz) >= s.remindHour && s.lastRemindedOn?.toISODate() !== localDate(now, tz)
     })
-    if (!subs.length) return stats
+    if (!subs.length) {
+      ReminderService.lastRunAt = new Date()
+      return stats
+    }
 
     const userIds = [...new Set(subs.map((s) => s.userId))]
     const profiles = await Profile.query().select(Profile.readable).whereIn('id', userIds)
@@ -228,6 +236,7 @@ export class ReminderService {
     }
 
     if (stats.sent || stats.removed || stats.failed) logger.info(stats, 'reminders sent')
+    ReminderService.lastRunAt = new Date()
     return stats
   }
 

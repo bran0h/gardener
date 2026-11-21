@@ -19,6 +19,7 @@ export default class Plant extends BaseModel {
     'name',
     'water_every_days',
     'last_watered_at',
+    'snoozed_until',
   ]
 
   @column({ isPrimary: true })
@@ -40,5 +41,9 @@ export default class Plant extends BaseModel {
 
   @column.dateTime()
   declare lastWateredAt: DateTime | null
+
+  /** "Soil still wet": not due before this date (the person's calendar). */
+  @column.date()
+  declare snoozedUntil: DateTime | null
 
 }

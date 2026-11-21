@@ -92,7 +92,13 @@
     "saved": "Uložené: {name}",
     "newTitle": "Nový zelený kamarát",
     "editTitle": "Upraviť {name}",
-    "plantFallback": "rastlinu"
+    "plantFallback": "rastlinu",
+    "skip": "Dnes preskočiť",
+    "skipHint": "Zemina je ešte vlhká – pripomeň zajtra",
+    "skipped": "{name}: tak zajtra 👍",
+    "skippedMany": "Preskočená {n} rastlina do zajtra 👍 | Preskočené {n} rastliny do zajtra 👍 | Preskočených {n} rastlín do zajtra 👍",
+    "wateredWhen": "poliate {when}",
+    "wateredBy": "{who}, {when}"
   },
   "form": {
     "addPhoto": "Pridať fotku",
@@ -154,6 +160,10 @@
     "note": {
       "verb": "Poznámka",
       "past": "Poznámka"
+    },
+    "skip": {
+      "verb": "Preskočiť",
+      "past": "Preskočené – zemina ešte vlhká"
     }
   },
   "due": {
@@ -287,5 +297,19 @@
     "imageUnreadable": "Tento prehliadač nevie otvoriť ten obrázok. Skús JPEG alebo PNG.",
     "imageProcess": "Obrázok sa nepodarilo spracovať.",
     "photoTooBig": "Fotka je príliš veľká."
+  },
+  "photos": {
+    "title": "Fotky",
+    "add": "+ Fotka",
+    "adding": "Pridávam…",
+    "empty": "Zatiaľ žiadne fotky. Občas nejakú pridaj a uvidíš, ako rastie.",
+    "cover": "Titulná",
+    "makeCover": "Nastaviť ako titulnú",
+    "delete": "Zmazať fotku",
+    "confirmDelete": "Áno, zmazať",
+    "added": "Fotka pridaná 📸",
+    "deleted": "Fotka zmazaná",
+    "coverSet": "Nová titulná fotka",
+    "open": "Otvoriť fotku z {date}"
   }
 }

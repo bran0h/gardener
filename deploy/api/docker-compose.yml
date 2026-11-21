@@ -11,6 +11,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    volumes:
+      # Touched by the nightly backup (/opt/backup); shown on /health.
+      - /opt/backup/heartbeat:/run/heartbeats:ro
     cap_drop:
       - ALL
     security_opt:
