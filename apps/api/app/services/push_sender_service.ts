@@ -39,9 +39,13 @@ export class PushSenderService {
       )
       return 'ok'
     } catch (error) {
-      const status = (error as { statusCode?: number }).statusCode
+      const { statusCode: status, body, message } = error as {
+        statusCode?: number
+        body?: string
+        message?: string
+      }
       if (status === 404 || status === 410) return 'gone'
-      logger.warn({ status, host: new URL(sub.endpoint).host }, 'push failed')
+      logger.warn({ status, body, reason: message, host: new URL(sub.endpoint).host }, 'push failed')
       return 'error'
     }
   }

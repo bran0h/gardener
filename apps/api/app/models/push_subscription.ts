@@ -18,7 +18,8 @@ export default class PushSubscription extends BaseModel {
   @column()
   declare endpoint: string
 
-  @column()
+  // Explicit: Lucid's snake_case would map this to "p_256_dh".
+  @column({ columnName: 'p256dh' })
   declare p256dh: string
 
   @column()
