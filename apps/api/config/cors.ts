@@ -1,5 +1,12 @@
 import app from '@adonisjs/core/services/app'
 import { defineConfig } from '@adonisjs/cors'
+import env from '#start/env'
+
+/** Origins from CORS_ORIGIN (comma-separated), e.g. https://gardener.hozza.dev */
+const allowlist = (env.get('CORS_ORIGIN') ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
 
 /**
  * Configuration options to tweak the CORS policy. The following
@@ -18,7 +25,7 @@ const corsConfig = defineConfig({
    * In production, keep an explicit allowlist (empty by default, so no
    * cross-origin browser access is allowed until configured).
    */
-  origin: app.inDev ? true : [],
+  origin: allowlist.length ? allowlist : app.inDev,
 
   /**
    * HTTP methods accepted for cross-origin requests.
@@ -37,9 +44,9 @@ const corsConfig = defineConfig({
   exposeHeaders: [],
 
   /**
-   * Allow cookies/authorization headers on cross-origin requests.
+   * No cookies: callers send their Supabase token in the Authorization header.
    */
-  credentials: true,
+  credentials: false,
 
   /**
    * Cache CORS preflight response for N seconds.
