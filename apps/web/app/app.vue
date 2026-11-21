@@ -13,6 +13,7 @@ useHead({
     <NuxtPage />
   </NuxtLayout>
   <AppToaster />
+  <ConfirmDialog />
 
   <!-- Shared filter that makes every doodle look drawn by hand. -->
   <svg width="0" height="0" class="absolute" aria-hidden="true">

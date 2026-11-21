@@ -5,6 +5,7 @@ const route = useRoute()
 const id = String(route.params.id)
 const { plants, fetchPlant, listLogs, logCare, skipToday, deleteLog, deletePlant, photoUrl, watchDiary } = usePlants()
 const { push } = useToast()
+const { ask } = useConfirm()
 const { ensure: ensureHomes, select: selectHome, ensurePeople, firstName, isShared } = useHomes()
 const user = useSupabaseUser()
 const { t } = useI18n()
@@ -101,6 +102,7 @@ async function addLog() {
 }
 
 async function removeLog(log: CareLog) {
+  if (!await ask({ title: t('confirm.removeEntryTitle'), message: t('confirm.removeEntryText'), confirm: t('common.remove') })) return
   try {
     await deleteLog(log)
     logs.value = logs.value.filter(l => l.id !== log.id)
@@ -109,10 +111,15 @@ async function removeLog(log: CareLog) {
   }
 }
 
-const confirmDelete = ref(false)
 async function destroy() {
   if (!plant.value) return
   const name = plant.value.name
+  const ok = await ask({
+    title: t('confirm.deletePlantTitle', { name }),
+    message: t('confirm.deletePlantText'),
+    confirm: t('common.delete')
+  })
+  if (!ok) return
   try {
     await deletePlant(plant.value)
     push(t('plant.goodbye', { name }))
@@ -181,7 +188,7 @@ async function destroy() {
             </p>
           </div>
 
-          <div class="max-w-sm">
+          <div class="max-w-md">
             <div class="note">
               <p class="flex items-center gap-2 font-script text-3xl font-bold">
                 <CareIcon kind="water" class="size-7!" /> {{ $t('plant.water') }}
@@ -192,20 +199,23 @@ async function destroy() {
               <p class="text-sm text-ink-soft">
                 {{ $t('plant.last', { when: relativeDay(plant.last_watered_at) }) }}
               </p>
-              <div class="mt-2 flex flex-wrap items-center gap-2">
+              <!-- One line: badge, watered, skip (just the clock on phones). -->
+              <div class="mt-2 flex items-center gap-2">
                 <DueBadge :days="waterDays" />
-                <button type="button" class="btn btn-water btn-sm" :disabled="busy" @click="record('water')">
+                <button type="button" class="btn btn-water btn-sm shrink-0" :disabled="busy" @click="record('water')">
                   {{ $t('plant.wateredNow') }}
                 </button>
+                <!-- Only when it is due: nothing to skip otherwise. -->
                 <button
-                  v-if="plant.water_every_days"
+                  v-if="waterDays !== null && waterDays <= 0"
                   type="button"
-                  class="btn btn-ghost btn-sm"
+                  class="btn btn-ghost btn-sm shrink-0 px-2! sm:px-3!"
                   :disabled="busy"
                   :title="$t('plant.skipHint')"
+                  :aria-label="$t('plant.skip')"
                   @click="skip"
                 >
-                  <CareIcon kind="skip" /> {{ $t('plant.skip') }}
+                  <CareIcon kind="skip" /><span class="hidden sm:inline">{{ $t('plant.skip') }}</span>
                 </button>
               </div>
             </div>
@@ -219,17 +229,9 @@ async function destroy() {
             <NuxtLink :to="`/plants/${plant.id}/edit`" class="btn">
               {{ $t('common.edit') }}
             </NuxtLink>
-            <button v-if="!confirmDelete" type="button" class="btn btn-ghost" @click="confirmDelete = true">
+            <button type="button" class="btn btn-ghost" @click="destroy">
               {{ $t('common.delete') }}
             </button>
-            <template v-else>
-              <button type="button" class="btn btn-danger" @click="destroy">
-                {{ $t('plant.confirmDelete', { name: plant.name }) }}
-              </button>
-              <button type="button" class="btn btn-ghost" @click="confirmDelete = false">
-                {{ $t('plant.keepIt') }}
-              </button>
-            </template>
           </div>
 
           <!-- diary -->

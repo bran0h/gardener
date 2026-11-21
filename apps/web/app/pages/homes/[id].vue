@@ -10,6 +10,7 @@ const {
 } = useHomes()
 const { push } = useToast()
 const user = useSupabaseUser()
+const { ask } = useConfirm()
 const { t } = useI18n()
 
 const home = computed(() => homes.value.find(h => h.id === id) ?? null)
@@ -105,6 +106,7 @@ async function share(inv: HomeInvite) {
 }
 
 async function revoke(inv: HomeInvite) {
+  if (!await ask({ title: t('confirm.revokeTitle'), message: t('confirm.revokeText'), confirm: t('homePage.revoke') })) return
   await run(() => revokeInvite(inv.id), t('homePage.linkRevoked'))
   invites.value = invites.value.filter(i => i.id !== inv.id)
 }
@@ -120,15 +122,28 @@ async function stepDown(p: HomePerson) {
   await load()
 }
 
-const confirmRemove = ref<string | null>(null)
 async function remove(p: HomePerson) {
+  const ok = await ask({
+    title: t('confirm.removePersonTitle', { name: displayName(p), home: home.value?.name ?? '' }),
+    message: t('confirm.removePersonText'),
+    confirm: t('common.remove')
+  })
+  if (!ok) return
   await run(() => removePerson(id, p.user_id), t('homePage.removed', { name: displayName(p) }))
-  confirmRemove.value = null
   await load()
 }
 
-const confirmLeave = ref(false)
+const soleOwner = computed(() => isOwner.value && people.value.filter(x => x.role === 'owner').length < 2)
+
 async function leaveHome() {
+  const name = home.value?.name ?? ''
+  const sure = await ask({
+    title: t('confirm.leaveTitle', { name }),
+    // A sole owner cannot leave (the database refuses); say why up front.
+    message: soleOwner.value ? t('homePage.onlyOwner') : t('confirm.leaveText'),
+    confirm: t('confirm.leave')
+  })
+  if (!sure) return
   const ok = await run(async () => {
     await leave(id)
     return true
@@ -136,9 +151,16 @@ async function leaveHome() {
   if (ok) navigateTo('/')
 }
 
-const confirmDelete = ref('')
 async function deleteHome() {
   const n = home.value?.name
+  if (!n) return
+  const sure = await ask({
+    title: t('confirm.deleteHomeTitle', { name: n }),
+    message: t('homePage.deleteText', { name: n }),
+    confirm: t('homePage.deleteForEveryone'),
+    requireText: n
+  })
+  if (!sure) return
   const ok = await run(async () => {
     await destroy(id)
     return true
@@ -222,23 +244,9 @@ async function deleteHome() {
               >
                 {{ $t('homePage.makeOwner') }}
               </button>
-              <button
-                v-if="confirmRemove !== p.user_id"
-                type="button"
-                class="btn btn-ghost btn-sm"
-                :disabled="busy"
-                @click="confirmRemove = p.user_id"
-              >
+              <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="remove(p)">
                 {{ $t('common.remove') }}
               </button>
-              <template v-else>
-                <button type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="remove(p)">
-                  {{ $t('homePage.yesRemove') }}
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" @click="confirmRemove = null">
-                  {{ $t('homePage.keep') }}
-                </button>
-              </template>
             </div>
             <div v-else-if="isOwner && p.user_id === me && people.filter(x => x.role === 'owner').length > 1" class="flex w-full justify-end sm:w-auto">
               <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="stepDown(p)">
@@ -282,38 +290,13 @@ async function deleteHome() {
       <!-- leave / delete -->
       <section class="flex flex-col gap-3">
         <div class="flex flex-wrap gap-2">
-          <button v-if="!confirmLeave" type="button" class="btn btn-ghost" @click="confirmLeave = true">
+          <button type="button" class="btn btn-ghost" :disabled="busy" @click="leaveHome">
             {{ $t('homePage.leave', { name: home.name }) }}
           </button>
-          <template v-else>
-            <button type="button" class="btn btn-danger" :disabled="busy" @click="leaveHome">
-              {{ $t('homePage.yesLeave') }}
-            </button>
-            <button type="button" class="btn btn-ghost" @click="confirmLeave = false">
-              {{ $t('homePage.stay') }}
-            </button>
-          </template>
-        </div>
-        <p v-if="confirmLeave && isOwner && people.filter(x => x.role === 'owner').length < 2" class="text-sm text-ink-soft">
-          {{ $t('homePage.onlyOwner') }}
-        </p>
-
-        <details v-if="isOwner" class="mt-2">
-          <summary class="cursor-pointer text-ink-soft">
+          <button v-if="isOwner" type="button" class="btn btn-ghost text-rose!" :disabled="busy" @click="deleteHome">
             {{ $t('homePage.deleteSummary') }}
-          </summary>
-          <div class="sketch mt-3 flex flex-col gap-2 bg-rose-light/60 p-3">
-            <p>
-              {{ $t('homePage.deleteText', { name: home.name }) }}
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <input v-model="confirmDelete" class="input max-w-60" :placeholder="home.name" :aria-label="$t('homePage.deleteConfirmAria')">
-              <button type="button" class="btn btn-danger" :disabled="busy || confirmDelete.trim() !== home.name" @click="deleteHome">
-                {{ $t('homePage.deleteForEveryone') }}
-              </button>
-            </div>
-          </div>
-        </details>
+          </button>
+        </div>
       </section>
     </template>
   </div>

@@ -7,11 +7,11 @@ const { listPhotos, addPhoto, makeCover, deletePhoto, pathUrl } = usePlants()
 const { push } = useToast()
 const { t } = useI18n()
 const { date } = useFormat()
+const { ask } = useConfirm()
 
 const photos = ref<PlantPhoto[]>([])
 const busy = ref(false)
 const open = ref<PlantPhoto | null>(null)
-const confirmDelete = ref(false)
 
 async function load() {
   photos.value = await listPhotos(props.plant.id)
@@ -42,7 +42,6 @@ function onFile(e: Event) {
 
 function show(p: PlantPhoto) {
   open.value = p
-  confirmDelete.value = false
 }
 
 async function cover(p: PlantPhoto) {
@@ -51,6 +50,7 @@ async function cover(p: PlantPhoto) {
 }
 
 async function remove(p: PlantPhoto) {
+  if (!await ask({ title: t('confirm.deletePhotoTitle'), message: t('confirm.deletePhotoText'), confirm: t('common.delete') })) return
   await run(() => deletePhoto(props.plant, p), t('photos.deleted'))
   open.value = null
 }
@@ -112,11 +112,8 @@ const day = (iso: string) => date(iso, { day: 'numeric', month: 'short', year: '
                 <button v-if="open.path !== plant.photo_path" type="button" class="btn btn-sun btn-sm" :disabled="busy" @click="cover(open)">
                   {{ $t('photos.makeCover') }}
                 </button>
-                <button v-if="!confirmDelete" type="button" class="btn btn-ghost btn-sm" @click="confirmDelete = true">
+                <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="remove(open)">
                   {{ $t('photos.delete') }}
-                </button>
-                <button v-else type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="remove(open)">
-                  {{ $t('photos.confirmDelete') }}
                 </button>
                 <button type="button" class="btn btn-sm" @click="open = null">
                   {{ $t('common.close') }}
