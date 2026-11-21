@@ -1,0 +1,53 @@
+name: API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'deploy/api/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/api.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: api-deploy
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter api...
+      - run: pnpm --filter api typecheck
+      - run: pnpm --filter api build
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to 169.58.223.190
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy
+          # The key is restricted on the server to exactly this command.
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes root@169.58.223.190 "deploy ${GITHUB_SHA}"
+      - name: Check it is up
+        run: |
+          for i in 1 2 3 4 5 6; do
+            curl -fsS https://gardener-api.hozza.dev/health && exit 0
+            sleep 10
+          done
+          exit 1

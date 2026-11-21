@@ -87,6 +87,23 @@ Redirects `https://*.hozza.dev/**` and `http://localhost:3000/**` are allowed by
   `gardener-api:<sha>` from `apps/api/Dockerfile` and restarts it. Its settings live in
   `/opt/gardener/.env.api` (template: `deploy/api/.env.api.example`).
 
+## Operations
+
+- **Backups**: `/opt/backup/backup.sh` (from `deploy/backup/`) runs nightly at 02:30 via
+  `/etc/cron.d/hozza-backup`: roles + `postgres` + `_supabase` dumps, storage files and the
+  config needed to restore (Supabase `.env` with its JWT/vault keys, overrides, Caddyfile, API
+  env). 7 days stay in `/opt/backup/local`, 30 days go to Cloudflare R2 (`/opt/backup/r2.env`,
+  template `deploy/backup/r2.env.example`). Log: `/var/log/hozza-backup.log`.
+  `sh /opt/backup/restore-test.sh` restores the newest one into a throwaway Postgres and compares
+  row counts with production.
+- **API deploys**: `.github/workflows/api.yml` typechecks and builds `apps/api`, then deploys over
+  SSH with a key that is restricted (forced command `/opt/gardener/ci-deploy.sh`) to
+  `deploy <commit-sha>`. Secrets: `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`.
+- **Monitoring**: `.github/workflows/monitor.yml` checks every 15 minutes from outside: the apps,
+  Supabase auth, the API's `/health` (reminder job ran in the last 20 min, off-site backup in the
+  last 26 h) and certificate expiry. A failure (confirmed after 5 minutes) opens an `outage` issue;
+  it is updated while failing and closed on recovery.
+
 ## Layout (web)
 
 | Path | What |

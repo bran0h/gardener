@@ -1,0 +1,114 @@
+name: Monitor
+
+# Checks the hozza.dev services from outside every 15 minutes. When something is
+# wrong (twice in a row, five minutes apart) it opens one "outage" issue, which
+# GitHub notifies you about; it keeps that issue updated and closes it once all
+# checks pass again.
+#
+# Note: GitHub pauses scheduled workflows in a repository with no activity for
+# 60 days; a push (or re-enabling it under Actions) starts it again.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      # Publishable key: safe to be public, it is in every page of the apps.
+      SUPABASE_KEY: sb_publishable_zbNfeY5Uitqx8iDs16UMmJ_-XfqUbbL
+    steps:
+      - name: Run checks
+        id: checks
+        shell: bash
+        run: |
+          set -u
+          check() {
+            local failures=()
+            page() { # name url
+              local code
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$2" || echo 000)
+              [[ "$code" =~ ^(200|301|302|307|308)$ ]] || failures+=("$1: HTTP $code ($2)")
+            }
+            page "gardener.hozza.dev" https://gardener.hozza.dev/
+            page "cloud.hozza.dev" https://cloud.hozza.dev/
+            page "auth.hozza.dev" https://auth.hozza.dev/
+            page "pdf.hozza.dev" https://pdf.hozza.dev/
+
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -H "apikey: $SUPABASE_KEY" https://supabase.hozza.dev/auth/v1/health || echo 000)
+            [[ "$code" == 200 ]] || failures+=("Supabase auth: HTTP $code")
+
+            health=$(curl -fsS --max-time 20 https://gardener-api.hozza.dev/health || echo '')
+            if [[ -z "$health" ]]; then
+              failures+=("gardener-api: /health unreachable")
+            else
+              now=$(date -u +%s)
+              runs=$(jq -r '.remindersLastRunAt // empty' <<<"$health")
+              if [[ -z "$runs" ]] || (( now - $(date -ud "$runs" +%s) > 20*60 )); then
+                failures+=("Reminder job: last run ${runs:-never} (expected every 5 min)")
+              fi
+              backup=$(jq -r '.backupLastOkAt // empty' <<<"$health")
+              if [[ -z "$backup" ]] || (( now - $(date -ud "$backup" +%s) > 26*3600 )); then
+                failures+=("Backup: last off-site backup ${backup:-never} (expected nightly at 02:30)")
+              fi
+            fi
+
+            for host in supabase.hozza.dev gardener-api.hozza.dev; do
+              end=$(echo | openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+              if [[ -z "$end" ]] || (( $(date -ud "$end" +%s) - $(date -u +%s) < 14*86400 )); then
+                failures+=("TLS $host: certificate ends ${end:-unknown}")
+              fi
+            done
+            printf '%s\n' "${failures[@]}"
+          }
+
+          result=$(check)
+          if [[ -n "$result" ]]; then
+            echo "First check failed, re-checking in 5 minutes:"; echo "$result"
+            sleep 300
+            result=$(check)
+          fi
+          {
+            echo 'failures<<EOF'
+            echo "$result"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          echo "${result:-all good}"
+
+      - name: Open, update or close the outage issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAILURES: ${{ steps.checks.outputs.failures }}
+        shell: bash
+        run: |
+          set -eu
+          gh label create outage --color B60205 --description "Opened by the monitor workflow" 2>/dev/null || true
+          open=$(gh issue list --label outage --state open --json number --jq '.[0].number // empty')
+          now=$(date -u '+%Y-%m-%d %H:%M UTC')
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          if [[ -n "$FAILURES" ]]; then
+            body=$(printf '**Still failing at the check at %s**\n\n%s\n\n[Monitor run](%s)\n\nThis issue closes itself when everything passes again.' \
+              "$now" "$(sed 's/^/- /' <<<"$FAILURES")" "$run")
+            if [[ -z "$open" ]]; then
+              gh issue create --label outage --title "hozza.dev: something is down" --body "$body"
+            else
+              gh issue edit "$open" --body "$body"
+            fi
+            exit 0
+          fi
+
+          if [[ -n "$open" ]]; then
+            gh issue close "$open" --comment "All checks pass again at $now. [Monitor run]($run)"
+          fi
