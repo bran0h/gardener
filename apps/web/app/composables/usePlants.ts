@@ -100,7 +100,7 @@ export function usePlants() {
     if (error) throw error
   }
 
-  /** Records care for one or more plants. The database moves last_watered_at / last_fertilized_at. */
+  /** Records care for one or more plants. The database moves last_watered_at. */
   async function logCare(plantIds: string[], kind: CareKind, opts: { note?: string | null, doneAt?: string } = {}) {
     if (!plantIds.length) return
     const doneAt = opts.doneAt ?? new Date().toISOString()

@@ -30,20 +30,14 @@ const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: '
 
 interface Due { plant: Plant, days: number }
 
-function dueList(field: 'water' | 'fertilize'): Due[] {
+function dueList(): Due[] {
   return plants.value
-    .map(plant => ({
-      plant,
-      days: field === 'water'
-        ? daysUntilDue(plant.last_watered_at, plant.water_every_days)
-        : daysUntilDue(plant.last_fertilized_at, plant.fertilize_every_days)
-    }))
+    .map(plant => ({ plant, days: daysUntilDue(plant.last_watered_at, plant.water_every_days) }))
     .filter((x): x is Due => x.days !== null && x.days <= 0)
     .sort((a, b) => a.days - b.days)
 }
 
-const thirsty = computed(() => dueList('water'))
-const hungry = computed(() => dueList('fertilize'))
+const thirsty = computed(() => dueList())
 
 const search = ref('')
 const room = ref<string | null>(null)
@@ -77,7 +71,7 @@ async function care(list: Plant[], kind: CareKind) {
   try {
     await logCare(ids, kind)
     const what = list.length === 1 ? list[0]!.name : `${list.length} plants`
-    push(kind === 'water' ? `Watered ${what} 💧` : `Fed ${what} 🌱`, kind === 'water' ? 'water' : 'leaf')
+    push(kind === 'water' ? `Watered ${what} 💧` : `${what}: done`, kind === 'water' ? 'water' : 'leaf')
   } catch (e) {
     push(errMsg(e), 'rose')
   } finally {
@@ -128,7 +122,7 @@ async function care(list: Plant[], kind: CareKind) {
 
     <template v-else-if="loaded">
       <!-- today -->
-      <section class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <section class="max-w-3xl">
         <div class="note -rotate-[0.4deg]">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 class="flex items-center gap-2 text-4xl">
@@ -162,31 +156,6 @@ async function care(list: Plant[], kind: CareKind) {
                 @click="care([t.plant], 'water')"
               >
                 <CareIcon kind="water" /> Done
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <div class="card rotate-[0.5deg]">
-          <h2 class="mb-3 flex items-center gap-2 text-3xl">
-            <CareIcon kind="fertilize" class="size-7!" /> Hungry
-          </h2>
-          <p v-if="!hungry.length" class="text-ink-soft">
-            No one needs feeding right now.
-          </p>
-          <ul v-else class="flex flex-col gap-2">
-            <li v-for="h in hungry" :key="h.plant.id" class="flex items-center justify-between gap-2">
-              <NuxtLink :to="`/plants/${h.plant.id}`" class="min-w-0 truncate text-lg">
-                {{ h.plant.name }}
-                <span class="text-sm text-ink-soft">· {{ dueLabel(h.days) }}</span>
-              </NuxtLink>
-              <button
-                type="button"
-                class="btn btn-sm bg-leaf-light!"
-                :disabled="busy.has(h.plant.id)"
-                @click="care([h.plant], 'fertilize')"
-              >
-                Fed
               </button>
             </li>
           </ul>

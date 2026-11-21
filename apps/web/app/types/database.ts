@@ -61,6 +61,10 @@ export type Database = {
         Args: { role_name: string }
         Returns: boolean
       }
+      gardener_ensure_home: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       gardener_create_home: {
         Args: { home_name: string }
         Returns: HomeRow

@@ -18,9 +18,7 @@ export default class Plant extends BaseModel {
     'home_id',
     'name',
     'water_every_days',
-    'fertilize_every_days',
     'last_watered_at',
-    'last_fertilized_at',
   ]
 
   @column({ isPrimary: true })
@@ -39,12 +37,8 @@ export default class Plant extends BaseModel {
   @column()
   declare waterEveryDays: number | null
 
-  @column()
-  declare fertilizeEveryDays: number | null
 
   @column.dateTime()
   declare lastWateredAt: DateTime | null
 
-  @column.dateTime()
-  declare lastFertilizedAt: DateTime | null
 }

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ days: number | null, kind?: 'water' | 'fertilize' }>(), { kind: 'water' })
+const props = defineProps<{ days: number | null }>()
 
 const state = computed(() => dueState(props.days))
 const tone = computed(() => ({
   late: 'bg-rose-light',
-  today: props.kind === 'water' ? 'bg-water-light' : 'bg-leaf-light',
+  today: 'bg-water-light',
   soon: 'bg-sun-light',
   ok: 'bg-white',
   none: 'bg-paper text-ink-soft'
@@ -13,7 +13,7 @@ const tone = computed(() => ({
 
 <template>
   <span class="chip" :class="tone">
-    <CareIcon :kind="kind" class="size-4!" />
+    <CareIcon kind="water" class="size-4!" />
     <span>{{ dueLabel(days) }}</span>
   </span>
 </template>

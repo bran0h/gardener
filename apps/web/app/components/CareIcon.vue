@@ -19,11 +19,6 @@ defineProps<{ kind: CareKind }>()
       <path class="fill-water-light" d="M12 3 C8.5 8.5 6 11.5 6 15 a6 6 0 0 0 12 0 C18 11.5 15.5 8.5 12 3 Z" />
       <path d="M9.5 15.5 q.5 2 2.5 2.5" />
     </template>
-    <template v-else-if="kind === 'fertilize'">
-      <path d="M12 21 L12 11" />
-      <path class="fill-leaf-light" d="M12 13 C8 13 5 10 5 6 C9 6 12 9 12 13 Z" />
-      <path class="fill-leaf-light" d="M12 11 C12 7 15 4 19 4 C19 8 16 11 12 11 Z" />
-    </template>
     <template v-else-if="kind === 'repot'">
       <path class="fill-clay-light" d="M6 10 H18 L16.5 20 H7.5 Z" />
       <path class="fill-clay" d="M4.5 7 H19.5 V10 H4.5 Z" />

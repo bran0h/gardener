@@ -79,7 +79,7 @@ function names(list: Plant[], max = 3): string {
 
 /**
  * The morning summary for one person across their homes, or null when nobody
- * needs anything. With several homes involved, the body names them.
+ * is thirsty. With several homes involved, the body names them.
  */
 export function buildDigest(
   plants: Plant[],
@@ -87,40 +87,32 @@ export function buildDigest(
   timeZone: string,
   homeNames: Map<string, string> = new Map()
 ): PushPayload | null {
-  const due = (p: Plant, kind: 'water' | 'feed') => {
-    const d =
-      kind === 'water'
-        ? daysUntilDue(p.lastWateredAt, p.waterEveryDays, today, timeZone)
-        : daysUntilDue(p.lastFertilizedAt, p.fertilizeEveryDays, today, timeZone)
+  const thirsty = plants.filter((p) => {
+    const d = daysUntilDue(p.lastWateredAt, p.waterEveryDays, today, timeZone)
     return d !== null && d <= 0
-  }
-  const thirsty = plants.filter((p) => due(p, 'water'))
-  const hungry = plants.filter((p) => due(p, 'feed'))
-  if (!thirsty.length && !hungry.length) return null
+  })
+  if (!thirsty.length) return null
 
-  let title: string
-  if (thirsty.length === 1) title = `💧 ${thirsty[0]!.name} is thirsty`
-  else if (thirsty.length > 1) title = `💧 ${thirsty.length} plants are thirsty`
-  else if (hungry.length === 1) title = `🌱 ${hungry[0]!.name} could use some food`
-  else title = `🌱 ${hungry.length} plants are hungry`
+  const title =
+    thirsty.length === 1
+      ? `💧 ${thirsty[0]!.name} is thirsty`
+      : `💧 ${thirsty.length} plants are thirsty`
 
-  const homesInvolved = new Set([...thirsty, ...hungry].map((p) => p.homeId))
-  const byHome = (list: Plant[]) => {
-    if (homesInvolved.size < 2) return names(list)
+  const homesInvolved = new Set(thirsty.map((p) => p.homeId))
+  let body: string
+  if (homesInvolved.size > 1) {
     const groups = new Map<string, Plant[]>()
-    for (const p of list) groups.set(p.homeId, [...(groups.get(p.homeId) ?? []), p])
-    return [...groups.entries()]
+    for (const p of thirsty) groups.set(p.homeId, [...(groups.get(p.homeId) ?? []), p])
+    body = `Water ${[...groups.entries()]
       .map(([id, ps]) => `${homeNames.get(id) ?? 'Home'}: ${names(ps, 2)}`)
-      .join(' · ')
+      .join(' · ')}.`
+  } else if (thirsty.length > 1) {
+    body = `Water ${names(thirsty)}.`
+  } else {
+    body = 'Tap to mark it done.'
   }
 
-  const lines: string[] = []
-  if (thirsty.length > 1 || (thirsty.length && homesInvolved.size > 1)) lines.push(`Water ${byHome(thirsty)}.`)
-  if (hungry.length && (thirsty.length || hungry.length > 1 || homesInvolved.size > 1))
-    lines.push(`Feed ${byHome(hungry)}.`)
-  if (!lines.length) lines.push('Tap to mark it done.')
-
-  return { title, body: lines.join(' '), url: '/', tag: `gardener-${today}` }
+  return { title, body, url: '/', tag: `gardener-${today}` }
 }
 
 /** Plants and home names for a set of people, via their home memberships. */

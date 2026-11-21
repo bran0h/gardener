@@ -3,6 +3,9 @@ import type { Home, HomeInvite, HomePerson, HomeRole, InvitePreview } from '~/ty
 
 const STORAGE_KEY = 'gardener-home'
 
+/** One shared ensure() at a time: the header, page and form all call it on mount. */
+let ensuring: Promise<void> | null = null
+
 function remembered(): string | null {
   try {
     return localStorage.getItem(STORAGE_KEY)
@@ -62,10 +65,23 @@ export function useHomes() {
     }
   }
 
-  /** Loads homes once; someone with access but no home yet gets one called "Home". */
-  async function ensure() {
-    if (!loaded.value) await refresh()
-    if (!homes.value.length) await create('Home')
+  /**
+   * Loads homes once; someone with access but no home yet gets one called
+   * "Home". The database function is idempotent too (per-person lock), so even
+   * two tabs at once cannot create duplicates.
+   */
+  function ensure(): Promise<void> {
+    ensuring ??= (async () => {
+      if (!loaded.value) await refresh()
+      if (homes.value.length) return
+      const { data, error } = await supabase.rpc('gardener_ensure_home')
+      if (error) throw error
+      await refresh()
+      select(data)
+    })().finally(() => {
+      ensuring = null
+    })
+    return ensuring
   }
 
   function select(id: string | null) {

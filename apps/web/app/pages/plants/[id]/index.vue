@@ -49,7 +49,6 @@ onMounted(async () => {
 useHead({ title: () => plant.value ? `${plant.value.name} · Gardener` : 'Gardener' })
 
 const waterDays = computed(() => plant.value && daysUntilDue(plant.value.last_watered_at, plant.value.water_every_days))
-const feedDays = computed(() => plant.value && daysUntilDue(plant.value.last_fertilized_at, plant.value.fertilize_every_days))
 
 const busy = ref(false)
 
@@ -162,7 +161,7 @@ async function destroy() {
             </p>
           </div>
 
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="max-w-sm">
             <div class="note">
               <p class="flex items-center gap-2 font-script text-3xl font-bold">
                 <CareIcon kind="water" class="size-7!" /> Water
@@ -177,23 +176,6 @@ async function destroy() {
                 <DueBadge :days="waterDays" />
                 <button type="button" class="btn btn-water btn-sm" :disabled="busy" @click="record('water')">
                   Watered now
-                </button>
-              </div>
-            </div>
-            <div class="note bg-leaf-light!">
-              <p class="flex items-center gap-2 font-script text-3xl font-bold">
-                <CareIcon kind="fertilize" class="size-7!" /> Feed
-              </p>
-              <p v-if="plant.fertilize_every_days" class="mt-1">
-                every {{ plant.fertilize_every_days }} days
-              </p>
-              <p class="text-sm text-ink-soft">
-                last: {{ relativeDay(plant.last_fertilized_at) }}
-              </p>
-              <div class="mt-2 flex flex-wrap items-center gap-2">
-                <DueBadge :days="feedDays" kind="fertilize" />
-                <button type="button" class="btn btn-sm" :disabled="busy" @click="record('fertilize')">
-                  Fed now
                 </button>
               </div>
             </div>

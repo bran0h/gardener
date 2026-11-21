@@ -96,7 +96,7 @@ const hourLabel = (h: number) =>
         </p>
 
         <template v-else-if="state === 'off'">
-          <p>Get a note every morning when someone is thirsty or hungry.</p>
+          <p>Get a note every morning when someone is thirsty.</p>
           <button type="button" class="btn btn-leaf" :disabled="busy" @click="run(enable, 'Reminders are on 🌱')">
             Turn on for this device
           </button>
@@ -118,7 +118,7 @@ const hourLabel = (h: number) =>
             </select>
           </label>
           <p class="text-sm text-ink-soft">
-            Only when someone needs water or food. Nothing to do, no note.
+            Only when someone needs water. Nothing to do, no note.
           </p>
           <div class="flex flex-wrap gap-2">
             <button type="button" class="btn btn-sun btn-sm" :disabled="busy" @click="run(test, 'Sent! It should pop up in a moment.')">

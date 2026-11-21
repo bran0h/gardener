@@ -24,14 +24,12 @@ const form = reactive({
   location: p?.location ?? '',
   light: (p?.light ?? 'medium') as Light | null,
   water_every_days: (p ? p.water_every_days : 7) as number | string | null,
-  fertilize_every_days: (p?.fertilize_every_days ?? null) as number | string | null,
   acquired_on: p?.acquired_on ?? '',
   notes: p?.notes ?? ''
 })
 const lastWatered = ref(todayInput())
 
 const WATER_PRESETS = [3, 7, 10, 14, 21, 30]
-const FEED_PRESETS = [14, 30, 60]
 
 const rooms = computed(() =>
   [...new Set(plants.value.map(x => x.location).filter((x): x is string => !!x))].sort()
@@ -104,7 +102,6 @@ async function submit() {
       location: blank(form.location),
       light: form.light,
       water_every_days: days(form.water_every_days),
-      fertilize_every_days: days(form.fertilize_every_days),
       acquired_on: form.acquired_on || null,
       notes: blank(form.notes),
       photo_path
@@ -271,35 +268,6 @@ async function submit() {
             :max="todayInput()"
             class="mt-1 sm:w-80"
           />
-        </div>
-      </div>
-
-      <div>
-        <label for="feed" class="field-label flex items-center gap-2">
-          <CareIcon kind="fertilize" class="size-6!" /> Feed every
-        </label>
-        <div class="flex flex-wrap items-center gap-2">
-          <input
-            id="feed"
-            v-model.number="form.fertilize_every_days"
-            type="number"
-            min="1"
-            max="730"
-            class="input w-24!"
-            placeholder="–"
-          >
-          <span>days</span>
-          <span class="mx-1 text-ink-soft">or</span>
-          <button
-            v-for="d in FEED_PRESETS"
-            :key="d"
-            type="button"
-            class="chip"
-            :class="form.fertilize_every_days === d ? 'bg-leaf-light!' : 'bg-white!'"
-            @click="form.fertilize_every_days = d"
-          >
-            {{ d }}
-          </button>
         </div>
       </div>
 
