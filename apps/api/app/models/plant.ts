@@ -15,6 +15,7 @@ export default class Plant extends BaseModel {
   static readonly readable = [
     'id',
     'user_id',
+    'home_id',
     'name',
     'water_every_days',
     'fertilize_every_days',
@@ -25,8 +26,12 @@ export default class Plant extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
+  /** Who added it. */
   @column()
   declare userId: string
+
+  @column()
+  declare homeId: string
 
   @column()
   declare name: string

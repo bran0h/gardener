@@ -1,4 +1,6 @@
-import type { CareLog, Plant, PushSubscriptionRow } from './plant'
+import type {
+  CareLog, HomeInvite, HomeMemberRow, HomePerson, HomeRow, InvitePreview, Plant, PushSubscriptionRow
+} from './plant'
 
 /**
  * The slice of the shared Supabase schema this app touches.
@@ -27,6 +29,24 @@ export type Database = {
           }
         ]
       }
+      gardener_homes: {
+        Row: HomeRow
+        Insert: never
+        Update: Pick<HomeRow, 'name'>
+        Relationships: []
+      }
+      gardener_home_members: {
+        Row: HomeMemberRow
+        Insert: never
+        Update: Pick<HomeMemberRow, 'role'>
+        Relationships: []
+      }
+      gardener_home_invites: {
+        Row: HomeInvite
+        Insert: Pick<HomeInvite, 'home_id'>
+        Update: never
+        Relationships: []
+      }
       gardener_push_subscriptions: {
         Row: PushSubscriptionRow
         Insert: Pick<PushSubscriptionRow, 'endpoint' | 'p256dh' | 'auth'>
@@ -40,6 +60,22 @@ export type Database = {
       has_role: {
         Args: { role_name: string }
         Returns: boolean
+      }
+      gardener_create_home: {
+        Args: { home_name: string }
+        Returns: HomeRow
+      }
+      gardener_home_people: {
+        Args: { home: string }
+        Returns: HomePerson[]
+      }
+      gardener_invite_preview: {
+        Args: { invite_token: string }
+        Returns: InvitePreview[]
+      }
+      gardener_accept_invite: {
+        Args: { invite_token: string }
+        Returns: string
       }
     }
     Enums: { [_ in never]: never }

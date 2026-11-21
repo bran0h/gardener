@@ -2,8 +2,9 @@
 definePageMeta({ layout: 'blank' })
 
 const user = useSupabaseUser()
+const redirect = useSupabaseCookieRedirect()
 watch(user, (u) => {
-  if (u) navigateTo('/')
+  if (u) navigateTo(redirect.pluck() || '/')
 }, { immediate: true })
 </script>
 

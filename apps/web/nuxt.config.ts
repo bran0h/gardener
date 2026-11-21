@@ -51,7 +51,9 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: []
+      exclude: [],
+      // So an invite link opened while signed out comes back after sign-in.
+      saveRedirectToCookie: true
     },
     types: false
   }

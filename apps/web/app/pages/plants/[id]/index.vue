@@ -5,8 +5,19 @@ const route = useRoute()
 const id = String(route.params.id)
 const { plants, fetchPlant, listLogs, logCare, deleteLog, deletePlant, photoUrl } = usePlants()
 const { push } = useToast()
+const { ensure: ensureHomes, select: selectHome, people: homePeople } = useHomes()
+const user = useSupabaseUser()
 
 const plant = computed(() => plants.value.find(p => p.id === id) ?? null)
+
+// Who logged what, when more than one person shares the home.
+const names = ref<Record<string, string>>({})
+const shared = computed(() => Object.keys(names.value).length > 1)
+function who(userId: string) {
+  if (!shared.value) return ''
+  if (userId === user.value?.sub) return 'you'
+  return names.value[userId] ?? 'someone who left'
+}
 const logs = ref<CareLog[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -18,7 +29,16 @@ onMounted(async () => {
       error.value = 'This plant does not exist (any more).'
       return
     }
-    logs.value = await listLogs(id)
+    selectHome(p.home_id)
+    const [entries, people] = await Promise.all([
+      listLogs(id),
+      ensureHomes().then(() => homePeople(p.home_id)).catch(() => [])
+    ])
+    logs.value = entries
+    names.value = Object.fromEntries(people.map(x => [
+      x.user_id,
+      (x.full_name || x.email?.split('@')[0] || 'someone').split(' ')[0]!
+    ]))
   } catch (e) {
     error.value = errMsg(e)
   } finally {
@@ -262,6 +282,7 @@ async function destroy() {
                     <p>
                       <span class="font-bold">{{ CARE_LABELS[log.kind].past }}</span>
                       <span class="text-ink-soft"> · {{ formatDay(log.done_at) }}</span>
+                      <span v-if="who(log.user_id)" class="text-ink-soft"> · by {{ who(log.user_id) }}</span>
                     </p>
                     <p v-if="log.note" class="whitespace-pre-line">
                       {{ log.note }}

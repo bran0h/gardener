@@ -3,6 +3,7 @@ const user = useSupabaseUser()
 const supabase = useSupabaseClient()
 const { reset } = useAccess()
 const { clear } = usePlants()
+const { clear: clearHomes } = useHomes()
 
 const meta = computed(() => (user.value?.user_metadata ?? {}) as Record<string, string | undefined>)
 const displayName = computed(() => meta.value.full_name ?? meta.value.name ?? user.value?.email ?? '')
@@ -12,6 +13,7 @@ async function signOut() {
   await supabase.auth.signOut()
   reset()
   clear()
+  clearHomes()
   await navigateTo('/login')
 }
 </script>
@@ -19,10 +21,13 @@ async function signOut() {
 <template>
   <div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:px-6">
     <header class="flex items-center justify-between gap-3 py-4 sm:py-6">
-      <NuxtLink to="/" class="flex items-center gap-2">
-        <PlantDoodle kind="leafy" class="size-12 -rotate-6 text-ink sm:size-14" />
-        <span class="font-script text-4xl font-bold sm:text-5xl">Gardener</span>
-      </NuxtLink>
+      <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+        <NuxtLink to="/" class="flex shrink-0 items-center gap-2" aria-label="Gardener, home">
+          <PlantDoodle kind="leafy" class="size-12 -rotate-6 text-ink sm:size-14" />
+          <span class="hidden font-script text-4xl font-bold sm:inline sm:text-5xl">Gardener</span>
+        </NuxtLink>
+        <HomeSwitcher />
+      </div>
       <div class="flex items-center gap-2">
         <ReminderBell />
         <NuxtLink to="/plants/new" class="btn btn-leaf hidden sm:inline-flex">
@@ -41,7 +46,7 @@ async function signOut() {
             class="sketch size-8 border-[1.5px]! object-cover"
             referrerpolicy="no-referrer"
           >
-          <span>Sign out</span>
+          <span class="hidden sm:inline">Sign out</span>
         </button>
       </div>
     </header>

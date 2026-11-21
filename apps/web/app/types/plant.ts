@@ -34,7 +34,9 @@ export const CARE_LABELS: Record<CareKind, { verb: string, past: string }> = {
 
 export type Plant = {
   id: string
+  /** Who added it. Access is by home. */
   user_id: string
+  home_id: string
   name: string
   species: string | null
   kind: PlantKind
@@ -53,7 +55,7 @@ export type Plant = {
 
 /** What the form writes. The last_* dates follow the care log and are never written directly. */
 export type PlantInput = Pick<Plant,
-  'name' | 'species' | 'kind' | 'location' | 'light' | 'water_every_days'
+  'home_id' | 'name' | 'species' | 'kind' | 'location' | 'light' | 'water_every_days'
   | 'fertilize_every_days' | 'photo_path' | 'notes' | 'acquired_on'>
 
 export type CareLog = {
@@ -79,4 +81,51 @@ export type PushSubscriptionRow = {
   last_reminded_on: string | null
   last_sent_at: string | null
   created_at: string
+}
+
+export type HomeRole = 'owner' | 'member'
+
+export type HomeRow = {
+  id: string
+  name: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** A home as the signed-in person sees it, with their own role in it. */
+export type Home = HomeRow & { role: HomeRole }
+
+export type HomeMemberRow = {
+  home_id: string
+  user_id: string
+  role: HomeRole
+  joined_at: string
+}
+
+/** Someone in a home, with the name and avatar from their profile. */
+export type HomePerson = {
+  user_id: string
+  role: HomeRole
+  joined_at: string
+  full_name: string | null
+  avatar_url: string | null
+  email: string | null
+}
+
+export type HomeInvite = {
+  id: string
+  home_id: string
+  token: string
+  created_by: string | null
+  expires_at: string
+  created_at: string
+}
+
+export type InvitePreview = {
+  home_id: string
+  home_name: string
+  invited_by: string | null
+  expires_at: string
+  already_member: boolean
 }

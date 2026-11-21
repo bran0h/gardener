@@ -7,8 +7,12 @@ import {
 const props = defineProps<{ plant?: Plant | null }>()
 const emit = defineEmits<{ saved: [plant: Plant] }>()
 
-const { plants, ensureLoaded, savePlant, uploadPhoto, removePhoto, logCare, photoUrl } = usePlants()
-onMounted(() => ensureLoaded().catch(() => {}))
+const { homePlants: plants, ensureLoaded, savePlant, uploadPhoto, removePhoto, logCare, photoUrl } = usePlants()
+const { ensure: ensureHomes, current: home } = useHomes()
+onMounted(() => {
+  ensureLoaded().catch(() => {})
+  ensureHomes().catch(() => {})
+})
 
 const isNew = computed(() => !props.plant)
 const p = props.plant
@@ -89,7 +93,11 @@ async function submit() {
       photo_path = null
     }
 
+    const homeId = p?.home_id ?? home.value?.id
+    if (!homeId) throw new Error('No home to put the plant in yet. Reload and try again.')
+
     const input: PlantInput = {
+      home_id: homeId,
       name: form.name.trim(),
       species: blank(form.species),
       kind: form.kind,

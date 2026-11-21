@@ -1,6 +1,7 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
+import Home from '#models/home'
 import Plant from '#models/plant'
 import Profile from '#models/profile'
 import PushSubscription from '#models/push_subscription'
@@ -76,8 +77,16 @@ function names(list: Plant[], max = 3): string {
   return shown[0] ?? ''
 }
 
-/** The morning summary for one person, or null when nobody needs anything. */
-export function buildDigest(plants: Plant[], today: string, timeZone: string): PushPayload | null {
+/**
+ * The morning summary for one person across their homes, or null when nobody
+ * needs anything. With several homes involved, the body names them.
+ */
+export function buildDigest(
+  plants: Plant[],
+  today: string,
+  timeZone: string,
+  homeNames: Map<string, string> = new Map()
+): PushPayload | null {
   const due = (p: Plant, kind: 'water' | 'feed') => {
     const d =
       kind === 'water'
@@ -95,12 +104,41 @@ export function buildDigest(plants: Plant[], today: string, timeZone: string): P
   else if (hungry.length === 1) title = `🌱 ${hungry[0]!.name} could use some food`
   else title = `🌱 ${hungry.length} plants are hungry`
 
+  const homesInvolved = new Set([...thirsty, ...hungry].map((p) => p.homeId))
+  const byHome = (list: Plant[]) => {
+    if (homesInvolved.size < 2) return names(list)
+    const groups = new Map<string, Plant[]>()
+    for (const p of list) groups.set(p.homeId, [...(groups.get(p.homeId) ?? []), p])
+    return [...groups.entries()]
+      .map(([id, ps]) => `${homeNames.get(id) ?? 'Home'}: ${names(ps, 2)}`)
+      .join(' · ')
+  }
+
   const lines: string[] = []
-  if (thirsty.length > 1) lines.push(`Water ${names(thirsty)}.`)
-  if (hungry.length && (thirsty.length || hungry.length > 1)) lines.push(`Feed ${names(hungry)}.`)
+  if (thirsty.length > 1 || (thirsty.length && homesInvolved.size > 1)) lines.push(`Water ${byHome(thirsty)}.`)
+  if (hungry.length && (thirsty.length || hungry.length > 1 || homesInvolved.size > 1))
+    lines.push(`Feed ${byHome(hungry)}.`)
   if (!lines.length) lines.push('Tap to mark it done.')
 
   return { title, body: lines.join(' '), url: '/', tag: `gardener-${today}` }
+}
+
+/** Plants and home names for a set of people, via their home memberships. */
+async function plantsForPeople(userIds: string[]) {
+  const homeIdsByUser = await Home.idsByUser(userIds)
+  const homeIds = [...new Set([...homeIdsByUser.values()].flat())]
+  const [homes, plants] = homeIds.length
+    ? await Promise.all([
+        Home.query().select(Home.readable).whereIn('id', homeIds),
+        Plant.query().select(Plant.readable).whereIn('home_id', homeIds),
+      ])
+    : [[], []]
+  const homeNames = new Map(homes.map((h) => [h.id, h.name]))
+  const plantsOf = (userId: string) => {
+    const mine = new Set(homeIdsByUser.get(userId) ?? [])
+    return plants.filter((p) => mine.has(p.homeId))
+  }
+  return { homeNames, plantsOf }
 }
 
 /**
@@ -123,7 +161,7 @@ export class ReminderService {
     const userIds = [...new Set(subs.map((s) => s.userId))]
     const profiles = await Profile.query().select(Profile.readable).whereIn('id', userIds)
     const allowed = new Set(profiles.filter((p) => p.hasRole(APP_ROLE)).map((p) => p.id))
-    const plants = allowed.size ? await Plant.query().select(Plant.readable).whereIn('user_id', [...allowed]) : []
+    const { homeNames, plantsOf } = await plantsForPeople([...allowed])
 
     for (const sub of subs) {
       stats.checked++
@@ -131,11 +169,7 @@ export class ReminderService {
       const today = localDate(now, tz)
 
       const payload = allowed.has(sub.userId)
-        ? buildDigest(
-            plants.filter((p) => p.userId === sub.userId),
-            today,
-            tz
-          )
+        ? buildDigest(plantsOf(sub.userId), today, tz, homeNames)
         : null
 
       if (payload) {
@@ -173,11 +207,12 @@ export class ReminderService {
     if (endpoint) query.where('endpoint', endpoint)
     const subs = await query
 
-    const plants = await Plant.query().select(Plant.readable).where('user_id', userId)
+    const { homeNames, plantsOf } = await plantsForPeople([userId])
+    const plants = plantsOf(userId)
     let sent = 0
     for (const sub of subs) {
       const tz = safeZone(sub.timezone)
-      const payload = buildDigest(plants, localDate(new Date(), tz), tz) ?? {
+      const payload = buildDigest(plants, localDate(new Date(), tz), tz, homeNames) ?? {
         title: '🌱 Reminders work!',
         body: 'Nobody needs anything right now. You will hear from me when someone gets thirsty.',
         url: '/',

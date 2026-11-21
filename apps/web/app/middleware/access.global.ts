@@ -4,6 +4,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (PUBLIC.includes(to.path)) return
   // The Supabase module redirects signed-out visitors; this is the role check.
   if (!useSupabaseUser().value) return
+  // Invite links work for anyone signed in: joining is what grants the role.
+  if (to.path.startsWith('/invite/')) return
 
   const { check, reset, lastError } = useAccess()
   const result = await check()

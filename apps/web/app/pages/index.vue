@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { CareKind, Plant } from '~/types/plant'
 
-const { plants, loaded, refresh, logCare, photoUrl } = usePlants()
+const { homePlants: plants, loaded: plantsLoaded, refresh, logCare, photoUrl } = usePlants()
+const { ensure: ensureHomes, current: home, homes } = useHomes()
+const loaded = computed(() => plantsLoaded.value && !!home.value)
 const { push } = useToast()
 const user = useSupabaseUser()
 
 const error = ref('')
 onMounted(async () => {
   try {
-    await refresh()
+    await Promise.all([ensureHomes(), refresh()])
   } catch (e) {
     error.value = errMsg(e)
   }
@@ -88,7 +90,9 @@ async function care(list: Plant[], kind: CareKind) {
   <div class="flex flex-col gap-10">
     <section>
       <p class="text-lg text-ink-soft">
-        {{ today }}
+        {{ today }}<template v-if="homes.length > 1 && home">
+          · {{ home.name }}
+        </template>
       </p>
       <h1 class="text-5xl sm:text-6xl">
         {{ greeting }}<span v-if="firstName">, {{ firstName }}</span>!
@@ -114,7 +118,8 @@ async function care(list: Plant[], kind: CareKind) {
         No plants yet
       </h2>
       <p class="text-ink-soft">
-        Add the first green friend and Gardener will remind you when it gets thirsty.
+        Add the first green friend to <b>{{ home?.name }}</b> and Gardener will remind you when it gets thirsty.
+        Living with someone? Invite them from the home menu at the top.
       </p>
       <NuxtLink to="/plants/new" class="btn btn-leaf text-xl!">
         + Add a plant

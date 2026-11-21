@@ -127,6 +127,17 @@ export function usePlants() {
     await fetchPlants([log.plant_id])
   }
 
+  /** Plants of the home that is open (the list holds every home's plants). */
+  const homePlants = computed(() => {
+    const id = useHomes().current.value?.id
+    return id ? plants.value.filter(p => p.home_id === id) : []
+  })
+
+  /** After leaving or deleting a home its plants are no longer readable. */
+  function forgetHome(homeId: string) {
+    plants.value = plants.value.filter(p => p.home_id !== homeId)
+  }
+
   function clear() {
     plants.value = []
     loaded.value = false
@@ -135,6 +146,8 @@ export function usePlants() {
 
   return {
     plants,
+    homePlants,
+    forgetHome,
     loaded,
     refresh,
     ensureLoaded,

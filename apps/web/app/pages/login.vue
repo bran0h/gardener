@@ -11,8 +11,9 @@ const error = ref(
     : route.query.error ? `Could not verify access: ${String(route.query.error)}` : ''
 )
 
+const redirect = useSupabaseCookieRedirect()
 watch(user, (u) => {
-  if (u && !route.query.denied && !route.query.error) navigateTo('/')
+  if (u && !route.query.denied && !route.query.error) navigateTo(redirect.pluck() || '/')
 }, { immediate: true })
 
 async function loginWithGoogle() {
