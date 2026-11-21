@@ -42,7 +42,7 @@ export function useHomes() {
   async function uid(): Promise<string> {
     const { data } = await supabase.auth.getSession()
     const id = data.session?.user.id
-    if (!id) throw new Error(useNuxtApp().$i18n.t('common.notSignedIn'))
+    if (!id) throw new Error('errors.signInFirst')
     return id
   }
 

@@ -17,7 +17,7 @@ const error = ref('')
 onMounted(async () => {
   try {
     invite.value = await preview(token)
-    if (!invite.value) error.value = t('invite.expired')
+    if (!invite.value) error.value = t('errors.inviteExpired')
   } catch (e) {
     error.value = errMsg(e)
   } finally {

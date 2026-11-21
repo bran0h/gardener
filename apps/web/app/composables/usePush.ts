@@ -133,7 +133,7 @@ export function usePush() {
   async function test() {
     const sub = await (await registration()).pushManager.getSubscription()
     const { data: { session } } = await supabase.auth.getSession()
-    if (!sub || !session) throw new Error(i18n.t('reminders.turnOnFirst'))
+    if (!sub || !session) throw new Error('errors.turnOnFirst')
     return await $fetch<{ devices: number, sent: number }>(`${apiUrl}/push/test`, {
       method: 'POST',
       headers: { authorization: `Bearer ${session.access_token}` },

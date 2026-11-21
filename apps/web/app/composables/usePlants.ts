@@ -84,7 +84,7 @@ export function usePlants() {
   async function uploadPhoto(file: File): Promise<string> {
     const { data: { session } } = await supabase.auth.getSession()
     const uid = session?.user.id
-    if (!uid) throw new Error(useNuxtApp().$i18n.t('common.notSignedIn'))
+    if (!uid) throw new Error('errors.signInFirst')
     const blob = await shrinkImage(file)
     const path = `${uid}/${crypto.randomUUID()}.jpg`
     const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {

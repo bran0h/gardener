@@ -93,7 +93,7 @@ async function submit() {
     }
 
     const homeId = p?.home_id ?? home.value?.id
-    if (!homeId) throw new Error(t('form.noHome'))
+    if (!homeId) throw new Error('errors.noHome')
 
     const input: PlantInput = {
       home_id: homeId,

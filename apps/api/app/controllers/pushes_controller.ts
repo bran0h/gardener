@@ -16,7 +16,7 @@ export default class PushesController {
     const { endpoint } = await request.validateUsing(testPushValidator)
     const result = await reminders.sendNow(caller.id, endpoint)
     if (!result.devices) {
-      return response.notFound({ error: 'This device has not turned reminders on yet.' })
+      return response.notFound({ error: 'errors.deviceNotSubscribed' })
     }
     return result
   }

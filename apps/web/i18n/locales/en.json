@@ -14,7 +14,6 @@
     "remove": "Remove",
     "you": "you",
     "someone": "Someone",
-    "notSignedIn": "Not signed in.",
     "days": "day | days"
   },
   "login": {
@@ -116,7 +115,6 @@
     "notes": "Notes",
     "notesPlaceholder": "Likes a shower now and then. Hates drafts.",
     "needsName": "Every plant deserves a name.",
-    "noHome": "No home to put the plant in yet. Reload and try again.",
     "saving": "Saving…",
     "plantIt": "Plant it!",
     "saveChanges": "Save changes",
@@ -137,11 +135,26 @@
     "bright": "Bright sun"
   },
   "care": {
-    "water": { "verb": "Water", "past": "Watered" },
-    "repot": { "verb": "Repot", "past": "Repotted" },
-    "prune": { "verb": "Prune", "past": "Pruned" },
-    "mist": { "verb": "Mist", "past": "Misted" },
-    "note": { "verb": "Note", "past": "Note" }
+    "water": {
+      "verb": "Water",
+      "past": "Watered"
+    },
+    "repot": {
+      "verb": "Repot",
+      "past": "Repotted"
+    },
+    "prune": {
+      "verb": "Prune",
+      "past": "Pruned"
+    },
+    "mist": {
+      "verb": "Mist",
+      "past": "Misted"
+    },
+    "note": {
+      "verb": "Note",
+      "past": "Note"
+    }
   },
   "due": {
     "noSchedule": "no schedule",
@@ -194,8 +207,7 @@
     "turnedOn": "Reminders are on 🌱",
     "turnedOff": "Reminders are off",
     "saved": "Saved",
-    "sent": "Sent! It should pop up in a moment.",
-    "turnOnFirst": "Turn reminders on first."
+    "sent": "Sent! It should pop up in a moment."
   },
   "homes": {
     "switchAria": "Switch home",
@@ -254,8 +266,26 @@
     "alreadyIn": "You're already in this home.",
     "openIt": "Open it",
     "hmm": "Hmm…",
-    "expired": "This invite link has expired or was revoked. Ask for a new one.",
     "goTo": "Go to Gardener",
     "welcome": "Welcome to {name} 🌿"
+  },
+  "errors": {
+    "unknown": "Something went wrong: {detail}",
+    "network": "Can't reach the server. Check your connection and try again.",
+    "server": "The server had a problem. Try again in a moment.",
+    "forbidden": "You're not allowed to do that.",
+    "noAccess": "No access to Gardener.",
+    "signInFirst": "Sign in first.",
+    "notFound": "It isn't there any more.",
+    "duplicate": "That already exists.",
+    "invalid": "Something in there isn't valid.",
+    "homeNeedsOwner": "A home needs an owner. Make someone else an owner first, or delete the home.",
+    "inviteExpired": "This invite link has expired or was revoked. Ask for a new one.",
+    "noHome": "No home to put the plant in yet. Reload and try again.",
+    "turnOnFirst": "Turn reminders on first.",
+    "deviceNotSubscribed": "This device hasn't turned reminders on yet.",
+    "imageUnreadable": "This browser cannot read that image. Try a JPEG or PNG.",
+    "imageProcess": "Could not process the image.",
+    "photoTooBig": "That photo is too big."
   }
 }

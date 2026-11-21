@@ -14,7 +14,6 @@
     "remove": "Odstrániť",
     "you": "ty",
     "someone": "Niekto",
-    "notSignedIn": "Nie si prihlásený.",
     "days": "deň | dni | dní"
   },
   "login": {
@@ -116,7 +115,6 @@
     "notes": "Poznámky",
     "notesPlaceholder": "Občas má rada sprchu. Nemá rada prievan.",
     "needsName": "Každá rastlina si zaslúži meno.",
-    "noHome": "Zatiaľ nie je domácnosť, kam ju dať. Obnov stránku a skús znova.",
     "saving": "Ukladám…",
     "plantIt": "Zasadiť!",
     "saveChanges": "Uložiť zmeny",
@@ -137,11 +135,26 @@
     "bright": "Plné slnko"
   },
   "care": {
-    "water": { "verb": "Poliať", "past": "Poliate" },
-    "repot": { "verb": "Presadiť", "past": "Presadené" },
-    "prune": { "verb": "Ostrihať", "past": "Ostrihané" },
-    "mist": { "verb": "Rosiť", "past": "Orosené" },
-    "note": { "verb": "Poznámka", "past": "Poznámka" }
+    "water": {
+      "verb": "Poliať",
+      "past": "Poliate"
+    },
+    "repot": {
+      "verb": "Presadiť",
+      "past": "Presadené"
+    },
+    "prune": {
+      "verb": "Ostrihať",
+      "past": "Ostrihané"
+    },
+    "mist": {
+      "verb": "Rosiť",
+      "past": "Orosené"
+    },
+    "note": {
+      "verb": "Poznámka",
+      "past": "Poznámka"
+    }
   },
   "due": {
     "noSchedule": "bez rozvrhu",
@@ -194,8 +207,7 @@
     "turnedOn": "Pripomienky sú zapnuté 🌱",
     "turnedOff": "Pripomienky sú vypnuté",
     "saved": "Uložené",
-    "sent": "Odoslané! O chvíľu by sa mala objaviť.",
-    "turnOnFirst": "Najprv zapni pripomienky."
+    "sent": "Odoslané! O chvíľu by sa mala objaviť."
   },
   "homes": {
     "switchAria": "Prepnúť domácnosť",
@@ -254,8 +266,26 @@
     "alreadyIn": "V tejto domácnosti už si.",
     "openIt": "Otvoriť",
     "hmm": "Hmm…",
-    "expired": "Platnosť pozvánky vypršala alebo bola zrušená. Požiadaj o novú.",
     "goTo": "Prejsť do Gardenera",
     "welcome": "Vitaj v domácnosti {name} 🌿"
+  },
+  "errors": {
+    "unknown": "Niečo sa pokazilo: {detail}",
+    "network": "Server je nedostupný. Skontroluj pripojenie a skús znova.",
+    "server": "Server mal problém. Skús to o chvíľu.",
+    "forbidden": "Na toto nemáš oprávnenie.",
+    "noAccess": "Nemáš prístup ku Gardeneru.",
+    "signInFirst": "Najprv sa prihlás.",
+    "notFound": "Už to tu nie je.",
+    "duplicate": "To už existuje.",
+    "invalid": "Niečo z toho nie je platné.",
+    "homeNeedsOwner": "Domácnosť potrebuje vlastníka. Najprv sprav vlastníkom niekoho iného alebo domácnosť zmaž.",
+    "inviteExpired": "Platnosť pozvánky vypršala alebo bola zrušená. Požiadaj o novú.",
+    "noHome": "Zatiaľ nie je domácnosť, kam ju dať. Obnov stránku a skús znova.",
+    "turnOnFirst": "Najprv zapni pripomienky.",
+    "deviceNotSubscribed": "Toto zariadenie ešte nemá zapnuté pripomienky.",
+    "imageUnreadable": "Tento prehliadač nevie otvoriť ten obrázok. Skús JPEG alebo PNG.",
+    "imageProcess": "Obrázok sa nepodarilo spracovať.",
+    "photoTooBig": "Fotka je príliš veľká."
   }
 }

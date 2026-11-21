@@ -45,12 +45,6 @@ export function inputToIso(value: string): string {
   return new Date(`${value}T12:00:00`).toISOString()
 }
 
-export function errMsg(e: unknown): string {
-  if (e instanceof Error) return e.message
-  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message)
-  return String(e)
-}
-
 /** A small, stable tilt per id so cards look pinned by hand. */
 export function tilt(id: string, max = 1.2): string {
   let h = 0
