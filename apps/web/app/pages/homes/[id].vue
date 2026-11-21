@@ -244,7 +244,7 @@ async function deleteHome() {
               >
                 {{ $t('homePage.makeOwner') }}
               </button>
-              <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="remove(p)">
+              <button type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="remove(p)">
                 {{ $t('common.remove') }}
               </button>
             </div>
@@ -290,10 +290,10 @@ async function deleteHome() {
       <!-- leave / delete -->
       <section class="flex flex-col gap-3">
         <div class="flex flex-wrap gap-2">
-          <button type="button" class="btn btn-ghost" :disabled="busy" @click="leaveHome">
+          <button type="button" class="btn" :disabled="busy" @click="leaveHome">
             {{ $t('homePage.leave', { name: home.name }) }}
           </button>
-          <button v-if="isOwner" type="button" class="btn btn-ghost text-rose!" :disabled="busy" @click="deleteHome">
+          <button v-if="isOwner" type="button" class="btn btn-danger" :disabled="busy" @click="deleteHome">
             {{ $t('homePage.deleteSummary') }}
           </button>
         </div>

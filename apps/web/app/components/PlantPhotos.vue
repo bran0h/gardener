@@ -112,7 +112,7 @@ const day = (iso: string) => date(iso, { day: 'numeric', month: 'short', year: '
                 <button v-if="open.path !== plant.photo_path" type="button" class="btn btn-sun btn-sm" :disabled="busy" @click="cover(open)">
                   {{ $t('photos.makeCover') }}
                 </button>
-                <button type="button" class="btn btn-ghost btn-sm" :disabled="busy" @click="remove(open)">
+                <button type="button" class="btn btn-danger btn-sm" :disabled="busy" @click="remove(open)">
                   {{ $t('photos.delete') }}
                 </button>
                 <button type="button" class="btn btn-sm" @click="open = null">

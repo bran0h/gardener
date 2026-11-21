@@ -229,7 +229,7 @@ async function destroy() {
             <NuxtLink :to="`/plants/${plant.id}/edit`" class="btn">
               {{ $t('common.edit') }}
             </NuxtLink>
-            <button type="button" class="btn btn-ghost" @click="destroy">
+            <button type="button" class="btn btn-danger" @click="destroy">
               {{ $t('common.delete') }}
             </button>
           </div>
