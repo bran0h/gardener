@@ -7,6 +7,9 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 export default class Profile extends BaseModel {
   static table = 'profiles'
 
+  /** The gardener_api role may read only these columns. */
+  static readonly readable = ['id', 'roles']
+
   @column({ isPrimary: true })
   declare id: string
 

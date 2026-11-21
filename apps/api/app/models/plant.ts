@@ -8,6 +8,20 @@ import type { DateTime } from 'luxon'
 export default class Plant extends BaseModel {
   static table = 'gardener_plants'
 
+  /**
+   * The gardener_api role may read only these columns, so queries must select
+   * them explicitly (a plain `select *` is refused).
+   */
+  static readonly readable = [
+    'id',
+    'user_id',
+    'name',
+    'water_every_days',
+    'fertilize_every_days',
+    'last_watered_at',
+    'last_fertilized_at',
+  ]
+
   @column({ isPrimary: true })
   declare id: string
 

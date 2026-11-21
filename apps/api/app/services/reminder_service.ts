@@ -121,9 +121,9 @@ export class ReminderService {
     if (!subs.length) return stats
 
     const userIds = [...new Set(subs.map((s) => s.userId))]
-    const profiles = await Profile.query().whereIn('id', userIds)
+    const profiles = await Profile.query().select(Profile.readable).whereIn('id', userIds)
     const allowed = new Set(profiles.filter((p) => p.hasRole(APP_ROLE)).map((p) => p.id))
-    const plants = allowed.size ? await Plant.query().whereIn('user_id', [...allowed]) : []
+    const plants = allowed.size ? await Plant.query().select(Plant.readable).whereIn('user_id', [...allowed]) : []
 
     for (const sub of subs) {
       stats.checked++
@@ -173,7 +173,7 @@ export class ReminderService {
     if (endpoint) query.where('endpoint', endpoint)
     const subs = await query
 
-    const plants = await Plant.query().where('user_id', userId)
+    const plants = await Plant.query().select(Plant.readable).where('user_id', userId)
     let sent = 0
     for (const sub of subs) {
       const tz = safeZone(sub.timezone)
