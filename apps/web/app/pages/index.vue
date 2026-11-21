@@ -180,7 +180,7 @@ async function skip(list: Plant[]) {
               <div class="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  class="btn btn-ghost btn-sm px-2!"
+                  class="btn btn-sm px-2!"
                   :disabled="busy.has(x.plant.id)"
                   :aria-label="`${$t('plant.skip')}: ${x.plant.name}`"
                   :title="$t('plant.skipHint')"

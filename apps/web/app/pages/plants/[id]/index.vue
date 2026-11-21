@@ -209,7 +209,7 @@ async function destroy() {
                 <button
                   v-if="waterDays !== null && waterDays <= 0"
                   type="button"
-                  class="btn btn-ghost btn-sm shrink-0 px-2! sm:px-3!"
+                  class="btn btn-sm shrink-0 px-2! sm:px-3!"
                   :disabled="busy"
                   :title="$t('plant.skipHint')"
                   :aria-label="$t('plant.skip')"
