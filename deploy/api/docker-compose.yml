@@ -1,0 +1,24 @@
+# Lives at /opt/gardener/docker-compose.yml on 169.58.223.190, next to Supabase.
+# The API joins Supabase's network: it reaches Postgres as `db` and the API
+# gateway as `api-gw`, and Supabase's Caddy proxies gardener-api.hozza.dev to it.
+# Nothing is published on the host.
+services:
+  api:
+    image: gardener-api:${API_TAG:?set API_TAG (deploy.sh does)}
+    container_name: gardener-api
+    restart: unless-stopped
+    env_file: .env.api
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - supabase
+
+networks:
+  supabase:
+    name: supabase_default
+    external: true

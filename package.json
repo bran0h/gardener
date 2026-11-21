@@ -1,28 +1,16 @@
 {
   "name": "gardener",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck"
-  },
-  "dependencies": {
-    "@fontsource/caveat": "^5.3.0",
-    "@fontsource/patrick-hand": "^5.3.0",
-    "@nuxtjs/supabase": "^2.1.0",
-    "@tailwindcss/vite": "^4.3.5",
-    "nuxt": "^4.6.4",
-    "tailwindcss": "^4.3.5",
-    "vue": "^3.5.45",
-    "vue-router": "^5.4.0"
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3",
-    "vue-tsc": "^3.3.14"
+    "dev": "pnpm --parallel --filter web --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
   },
   "packageManager": "pnpm@10.33.4"
 }
