@@ -86,6 +86,13 @@
     padding: 1rem;
   }
 
+  /* Menus, pickers and dialogs float over the page: never see-through. */
+  .card-solid {
+    @apply sketch shadow-sketch;
+    background: #fff;
+    padding: 1rem;
+  }
+
   .note {
     @apply sketch-alt shadow-sketch;
     background: var(--color-sun-light);

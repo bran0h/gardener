@@ -75,7 +75,7 @@ async function add() {
     <Transition name="fade">
       <div
         v-if="open"
-        class="card fixed inset-x-3 top-20 z-50 flex flex-col gap-1 p-2! sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:w-72"
+        class="card-solid fixed inset-x-3 top-20 z-50 flex flex-col gap-1 p-2! sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:w-72"
         role="menu"
       >
         <button

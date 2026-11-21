@@ -58,7 +58,7 @@ const hourLabel = (h: number) => time(new Date(2024, 0, 1, h), { hour: 'numeric'
     <Transition name="fade">
       <div
         v-if="open"
-        class="card tape fixed inset-x-3 top-20 z-50 flex flex-col gap-3 p-4! sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-3 sm:w-80"
+        class="card-solid tape fixed inset-x-3 top-20 z-50 flex flex-col gap-3 p-4! sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-3 sm:w-80"
         role="dialog"
         :aria-label="$t('reminders.title')"
       >

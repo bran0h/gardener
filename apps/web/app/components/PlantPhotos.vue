@@ -104,7 +104,7 @@ const day = (iso: string) => date(iso, { day: 'numeric', month: 'short', year: '
           @click.self="open = null"
           @keydown.esc="open = null"
         >
-          <div class="card flex max-h-full w-full max-w-lg flex-col gap-3 p-3!">
+          <div class="card-solid flex max-h-full w-full max-w-lg flex-col gap-3 p-3!">
             <img v-if="pathUrl(open.path)" :src="pathUrl(open.path)!" alt="" class="sketch-alt max-h-[65dvh] w-full object-contain">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-script text-2xl font-bold">{{ day(open.taken_at) }}</span>

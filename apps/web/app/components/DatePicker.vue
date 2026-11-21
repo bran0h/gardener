@@ -208,7 +208,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
         role="dialog"
         aria-modal="false"
         :aria-label="ariaLabel || $t('datePicker.choose')"
-        class="card fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 p-3! sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:mt-2 sm:w-80"
+        class="card-solid fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 p-3! sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:mt-2 sm:w-80"
       >
         <!-- header -->
         <div class="mb-2 flex items-center justify-between gap-1">

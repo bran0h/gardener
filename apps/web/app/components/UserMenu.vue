@@ -63,7 +63,7 @@ async function signOut() {
     <Transition name="fade">
       <div
         v-if="open"
-        class="card fixed inset-x-3 top-20 z-50 flex flex-col gap-3 p-4! sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-72"
+        class="card-solid fixed inset-x-3 top-20 z-50 flex flex-col gap-3 p-4! sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-72"
         role="menu"
       >
         <div class="min-w-0">
@@ -95,9 +95,11 @@ async function signOut() {
           </div>
         </div>
 
-        <button type="button" role="menuitem" class="btn btn-ghost justify-start! border-t-2! border-dashed! border-ink/15! pt-3" @click="signOut">
-          {{ $t('menu.signOut') }}
-        </button>
+        <div class="border-t-2 border-dashed border-ink/15 pt-3">
+          <button type="button" role="menuitem" class="btn btn-ghost w-full justify-start!" @click="signOut">
+            {{ $t('menu.signOut') }}
+          </button>
+        </div>
       </div>
     </Transition>
   </div>
